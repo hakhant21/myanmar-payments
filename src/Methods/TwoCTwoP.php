@@ -52,6 +52,25 @@ class TwoCTwoP
         }
     }
 
+    private function getPayload($amount, $invoiceNo, $nonceStr, $paymentDescription, $frontendReturnUrl, $backendReturnUrl, $userDefined) {
+        return [
+            'merchantID' => $this->configs['merchant_id'],
+            'invoiceNo' => $this->getInvoiceNo($invoiceNo),
+            'description' => $paymentDescription ?? "Payment for " . config("app.name"),
+            'amount' => $this->getAmount($amount),
+            'currencyCode' => $this->configs['currency_code'] ?? 'MMK',
+            'paymentChannel' => $this->configs['payment_channel'],
+            'frontendReturnUrl' => $frontendReturnUrl,
+            'backendReturnUrl' => $backendReturnUrl,
+            'userDefined1' => $userDefined[0] ?? '',
+            'userDefined2' => $userDefined[1] ?? '',
+            'userDefined3' => $userDefined[2] ?? '',
+            'userDefined4' => $userDefined[3] ?? '',
+            'userDefined5' => $userDefined[4] ?? '',
+            'nonceStr' => $nonceStr
+        ];
+    }
+
     private function validateData($backendReturnUrl, $secretKey, $merchantId, $currencyCode)
     {
         if (!$secretKey || !$merchantId) {
@@ -65,24 +84,5 @@ class TwoCTwoP
         if (!filter_var($backendReturnUrl, FILTER_VALIDATE_URL)) {
             throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
         }
-    }
-
-    private function getPayload($amount, $invoiceNo, $nonceStr, $paymentDescription, $frontendReturnUrl, $backendReturnUrl, $userDefined) {
-        return [
-            'merchantID' => $this->configs['merchant_id'],
-            'amount' => $this->getAmount($amount),
-            'invoiceNo' => $this->getInvoiceNo($invoiceNo),
-            'nonceStr' => $nonceStr,
-            'currencyCode' => $this->configs['currency_code'] ?? 'MMK',
-            'paymentChannel' => $this->configs['payment_channel'],
-            'description' => $paymentDescription ?? "Payment for " . config("app.name"),
-            'frontendReturnUrl' => $frontendReturnUrl,
-            'backendReturnUrl' => $backendReturnUrl,
-            'userDefined1' => $userDefined[0] ?? '',
-            'userDefined2' => $userDefined[1] ?? '',
-            'userDefined3' => $userDefined[2] ?? '',
-            'userDefined4' => $userDefined[3] ?? '',
-            'userDefined5' => $userDefined[4] ?? '',
-        ];
     }
 }
