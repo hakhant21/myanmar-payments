@@ -9,9 +9,9 @@ beforeEach(function(){
 it('can get payment url with require parameters', function(){
     $url = $this->gateway->createPayment(
         1000, // amount
-        "1234", // invoiceNo
+        random_int(100000, 999999), // invoiceNo
         "MMK", // currencyCode
-        "123456", // nonceStr
+        uniqid(), // nonceStr
         "https://example.com/frontend-return-url", // frontendReturnUrl
         "https://example.com/backend-return-url", // backendReturnUrl
         "test payment", // payment description
