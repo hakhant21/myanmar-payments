@@ -25,10 +25,6 @@ trait HasParameters
 
     private function getAmount($amount)
     {
-        $real_amount = sprintf('%.2f', $amount);
-
-        $amount = str_replace('.', '', $real_amount);
-
         return str_pad($amount, 12, '0', STR_PAD_LEFT);
     }
 }
