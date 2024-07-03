@@ -43,4 +43,9 @@ php artisan vendor:publish --provider="Hak\Payments\GatewayServiceProvider" --ta
   * MERCHANT_ID // JT02 
   * SECRET_KEY // SHA256 key
   * CURRENCY_CODE // MMK
+  
+#### Inspire from laranex
+
+[laravel-myanmar-payments](https://github.com/laranex/laravel-myanmar-payments.git)
+
 
