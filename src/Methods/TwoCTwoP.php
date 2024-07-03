@@ -52,6 +52,21 @@ class TwoCTwoP
         }
     }
 
+    private function validateData($backendReturnUrl, $secretKey, $merchantId, $currencyCode)
+    {
+        if (!$secretKey || !$merchantId) {
+            throw new Exception("Invalid 2C2P Secret Key OR Invalid 2C2P Merchant Id");
+        }
+
+        if (!$currencyCode) {
+            throw new Exception("Invalid Currency");
+        }
+
+        if (!filter_var($backendReturnUrl, FILTER_VALIDATE_URL)) {
+            throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
+        }
+    }
+
     private function getPayload($amount, $invoiceNo, $nonceStr, $paymentDescription, $frontendReturnUrl, $backendReturnUrl, $userDefined) {
         return [
             'merchantID' => $this->configs['merchant_id'],

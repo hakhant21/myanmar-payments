@@ -31,20 +31,4 @@ trait HasParameters
 
         return str_pad($amount, 12, '0', STR_PAD_LEFT);
     }
-
-
-    private function validateData($backendReturnUrl, $secretKey, $merchantId, $currencyCode)
-    {
-        if (!$secretKey || !$merchantId) {
-            throw new Exception("Invalid 2C2P Secret Key OR Invalid 2C2P Merchant Id");
-        }
-
-        if (!$currencyCode) {
-            throw new Exception("Invalid Currency");
-        }
-
-        if (!filter_var($backendReturnUrl, FILTER_VALIDATE_URL)) {
-            throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
-        }
-    }
 }
