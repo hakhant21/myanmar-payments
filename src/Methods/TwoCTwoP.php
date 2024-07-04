@@ -48,7 +48,7 @@ class TwoCTwoP
 
             return $payload->webPaymentUrl;
         } else {
-            throw new Exception("Something went wrong in requesting payment screen for 2C2P");
+            throw new Exception("Something went wrong, please try again");
         }
     }
 
@@ -74,15 +74,15 @@ class TwoCTwoP
     private function validateData($backendReturnUrl, $secretKey, $merchantId, $currencyCode)
     {
         if (!$secretKey || !$merchantId) {
-            throw new Exception("Invalid 2C2P Secret Key OR Invalid 2C2P Merchant Id");
+            throw new Exception("Invalid Secret Key OR Invalid Merchant Id");
         }
 
         if (!$currencyCode) {
-            throw new Exception("Invalid Currency");
+            throw new Exception("Invalid Currency Code");
         }
 
         if (!filter_var($backendReturnUrl, FILTER_VALIDATE_URL)) {
-            throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
+            throw  new Exception("Invalid backend URL");
         }
     }
 }
