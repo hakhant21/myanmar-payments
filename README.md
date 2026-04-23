@@ -1,9 +1,13 @@
-# hakhant/myanmar-payments
+# Myanmar Payments
 
 Laravel package for Myanmar payments, focused on KBZPay and MMQR, with secure webhook signature verification, strict typing, and an extensible provider architecture.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/hakhant/myanmar-payments.svg)](https://packagist.org/packages/hakhant/myanmar-payments)
+[![Total Downloads](https://img.shields.io/packagist/dt/hakhant/myanmar-payments.svg)](https://packagist.org/packages/hakhant/myanmar-payments)
+[![PHP Version Requirement](https://img.shields.io/packagist/php-v/hakhant/myanmar-payments.svg)](https://packagist.org/packages/hakhant/myanmar-payments)
+[![License](https://img.shields.io/github/license/hakhant21/myanmar-payments.svg)](LICENSE.md)
 
 ## Features
 
