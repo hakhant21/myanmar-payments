@@ -1,6 +1,9 @@
 # hakhant/myanmar-payments
 
-Production-ready Laravel payment package for Myanmar payment providers with SOLID architecture, strict types, and extensible provider strategy.
+Laravel package for Myanmar payments, focused on KBZPay and MMQR, with secure webhook signature verification, strict typing, and an extensible provider architecture.
+
+[![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
+[![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
 
 ## Features
 
@@ -8,7 +11,7 @@ Production-ready Laravel payment package for Myanmar payment providers with SOLI
 - PSR-4 autoloading
 - Strategy + Factory provider architecture
 - Provider adapter for KBZPay (including MMQR)
-- KBZ callback/request signature verification via KBZ canonical SHA256 signing
+- KBZ callback/request signature verification with canonical SHA256 signing
 - Laravel Service Provider + Facade integration
 - Tooling: Pint, Rector, PHPStan, Pest
 
@@ -23,7 +26,7 @@ Production-ready Laravel payment package for Myanmar payment providers with SOLI
 composer require hakhant/myanmar-payments
 ```
 
-## Publish Config
+## Publish Configuration
 
 ```bash
 php artisan vendor:publish --tag=myanmar-payments-config
@@ -80,6 +83,7 @@ public function checkout(PaymentManager $payments)
 ## Quality Commands
 
 ```bash
+composer quality
 composer format
 composer analyse
 composer test
@@ -88,9 +92,9 @@ composer refactor
 
 ## Documentation
 
-### Customer Provider Integration Guide
+### Custom Provider Integration Guide
 
-This guide explains how to integrate a new payment provider into `hakhant/myanmar-payments` while preserving SOLID and existing patterns.
+This guide explains how to integrate a custom payment provider into `hakhant/myanmar-payments` while preserving SOLID principles and established package patterns.
 
 #### 1. Choose Capabilities
 
@@ -124,7 +128,7 @@ Responsibilities:
 
 Add provider config in `config/myanmar-payments.php` under `providers`.
 
-Use env keys for all sensitive/runtime values.
+Use environment keys for all sensitive runtime values.
 
 Example skeleton:
 
@@ -183,3 +187,4 @@ Your provider should:
 - Coverage verified: `composer test:coverage`
 - Static analysis passes: `composer analyse`
 - Formatter clean: `composer format`
+- Full quality pipeline passes: `composer quality`
