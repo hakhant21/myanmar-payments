@@ -4,27 +4,25 @@ on:
     push:
         tags:
             - "v*"
-    workflow_dispatch:
 
 permissions:
     contents: write
 
 jobs:
     release:
-        name: Create GitHub Release
+        name: Create GitHub Release & Bump Version
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout
               uses: actions/checkout@v4
 
-            - name: Extract version from composer.json and ensure tag exists
-              id: version
-              if: github.event_name == 'workflow_dispatch'
+            - name: Extract version from tag
+              id: tag_version
               run: |
-                  VERSION=$(grep -m 1 '"version"' composer.json | sed 's/.*"version": "\([^"]*\)".*/\1/')
-                  TAG="v${VERSION}"
-                  echo "current_version=${VERSION}" >> "$GITHUB_OUTPUT"
+                  TAG="${GITHUB_REF_NAME}"
+                  VERSION="${TAG#v}"
+                  echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
                   echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
                   # Calculate next patch version (bump 0.0.1)
@@ -33,34 +31,20 @@ jobs:
                   NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
                   echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
 
-                  git config user.name "github-actions[bot]"
-                  git config user.email "github-actions[bot]@users.noreply.github.com"
-                  git fetch --tags
-                  if ! git rev-parse "$TAG" >/dev/null 2>&1; then
-                    git tag "$TAG"
-                    git push origin "$TAG"
-                  fi
-
-            - name: Resolve tag
-              id: resolve_tag
-              run: |
-                  if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-                    echo "tag=${{ steps.version.outputs.tag }}" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
-                  fi
-
-            - name: Create release
+            - name: Create GitHub Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ steps.resolve_tag.outputs.tag }}
+                  tag_name: ${{ steps.tag_version.outputs.tag }}
                   generate_release_notes: true
 
-            - name: Bump version in composer.json and commit
-              if: github.event_name == 'workflow_dispatch'
+            - name: Bump version for next development cycle
               run: |
-                  NEXT_VERSION="${{ steps.version.outputs.next_version }}"
+                  NEXT_VERSION="${{ steps.tag_version.outputs.next_version }}"
+
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+
                   perl -i -pe "s/\"version\": \"[^\"]*\"/\"version\": \"${NEXT_VERSION}\"/" composer.json
                   git add composer.json
-                  git commit -m "chore: bump version to ${NEXT_VERSION}"
+                  git commit -m "chore: bump version to ${NEXT_VERSION} for next release"
                   git push origin main

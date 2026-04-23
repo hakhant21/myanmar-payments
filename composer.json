@@ -57,7 +57,8 @@
       "@format",
       "@analyse",
       "@refactor"
-    ]
+    ],
+    "release": "bash release.sh"
   },
   "minimum-stability": "stable",
   "prefer-stable": true,
