@@ -49,8 +49,8 @@
     "test": "vendor/bin/pest",
     "test:coverage": "XDEBUG_MODE=coverage vendor/bin/pest --coverage --coverage-text",
     "format": "vendor/bin/pint",
-    "analyse": "vendor/bin/phpstan analyse --memory-limit=1G",
-    "refactor": "vendor/bin/rector process",
+    "analyse": "vendor/bin/phpstan analyse --memory-limit=1G --xdebug",
+    "refactor": "vendor/bin/rector process --xdebug",
     "quality": [
       "@test",
       "@test:coverage",
