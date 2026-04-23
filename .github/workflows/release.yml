@@ -47,7 +47,7 @@ jobs:
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
-                  perl -i -pe "s/\"version\": \"[^\"]*\"/\"version\": \"${NEXT_VERSION}\"/" composer.json
-                  git add composer.json
+                  echo "${NEXT_VERSION}" > VERSION
+                  git add VERSION
                   git commit -m "chore: bump version to ${NEXT_VERSION} for next release"
                   git push origin HEAD:main
