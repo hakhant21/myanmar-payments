@@ -16,6 +16,9 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v4
+              with:
+                  ref: main
+                  fetch-depth: 0
 
             - name: Extract version from tag
               id: tag_version
@@ -47,4 +50,4 @@ jobs:
                   perl -i -pe "s/\"version\": \"[^\"]*\"/\"version\": \"${NEXT_VERSION}\"/" composer.json
                   git add composer.json
                   git commit -m "chore: bump version to ${NEXT_VERSION} for next release"
-                  git push origin main
+                  git push origin HEAD:main
