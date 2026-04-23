@@ -82,6 +82,135 @@ public function checkout(PaymentManager $payments)
 }
 ```
 
+### Query Payment Status
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+
+public function status(string $transactionId, PaymentManager $payments): array
+{
+    $response = $payments->provider('kbzpay')->queryStatus($transactionId);
+
+    return [
+        'transaction_id' => $response->transactionId,
+        'status' => $response->status->value,
+        'provider' => $response->provider,
+    ];
+}
+```
+
+### Refund (Provider Optional Capability)
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Contracts\CanRefundPayment;
+use Hakhant\Payments\Domain\DTO\RefundRequest;
+use RuntimeException;
+
+public function refund(string $transactionId, PaymentManager $payments): array
+{
+    $gateway = $payments->provider('kbzpay');
+
+    if (! $gateway instanceof CanRefundPayment) {
+        throw new RuntimeException('Selected provider does not support refunds.');
+    }
+
+    $response = $gateway->refund(new RefundRequest(
+        transactionId: $transactionId,
+        amount: 10000,
+        reason: 'Customer requested cancellation'
+    ));
+
+    return [
+        'refund_id' => $response->refundId,
+        'status' => $response->status->value,
+    ];
+}
+```
+
+### Verify Callback Signature (Provider Optional Capability)
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Contracts\CanVerifyCallback;
+use Hakhant\Payments\Domain\DTO\CallbackPayload;
+use Illuminate\Http\Request;
+use RuntimeException;
+
+public function webhook(Request $request, PaymentManager $payments)
+{
+    $gateway = $payments->provider('kbzpay');
+
+    if (! $gateway instanceof CanVerifyCallback) {
+        throw new RuntimeException('Selected provider does not support callback verification.');
+    }
+
+    $payload = new CallbackPayload(
+        payload: $request->all(),
+        signature: (string) $request->header('X-Signature', ''),
+        timestamp: $request->header('X-Timestamp') !== null
+            ? (int) $request->header('X-Timestamp')
+            : null,
+    );
+
+    $valid = $gateway->verifyCallback($payload);
+
+    abort_unless($valid, 401, 'Invalid signature');
+
+    return response()->json(['ok' => true]);
+}
+```
+
+### MMQR Usage
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Contracts\CanInitiateMmqr;
+use Hakhant\Payments\Domain\DTO\MmqrRequest;
+use RuntimeException;
+
+public function createMmqr(PaymentManager $payments): array
+{
+    $gateway = $payments->provider('kbzpay');
+
+    if (! $gateway instanceof CanInitiateMmqr) {
+        throw new RuntimeException('Selected provider does not support MMQR.');
+    }
+
+    $response = $gateway->createMmqr(new MmqrRequest(
+        merchantReference: 'MMQR-1001',
+        amount: 10000,
+        currency: 'MMK',
+        notifyUrl: 'https://example.com/payments/mmqr/callback',
+        metadata: ['invoice_no' => 'INV-1001'],
+    ));
+
+    return [
+        'transaction_id' => $response->transactionId,
+        'status' => $response->status->value,
+        'qr_code' => $response->qrCode,
+        'qr_image' => $response->qrImage,
+    ];
+}
+```
+
+### Facade Usage
+
+```php
+use Hakhant\Payments\Domain\DTO\PaymentRequest;
+use Hakhant\Payments\Laravel\Facades\MyanmarPayments;
+
+$response = MyanmarPayments::provider('kbzpay')->createPayment(
+    new PaymentRequest(
+        merchantReference: 'INV-2001',
+        amount: 25000,
+        currency: 'MMK',
+        callbackUrl: 'https://example.com/payments/callback',
+        redirectUrl: 'https://example.com/payments/return'
+    )
+);
+```
+
 ## Quality Commands
 
 ```bash
