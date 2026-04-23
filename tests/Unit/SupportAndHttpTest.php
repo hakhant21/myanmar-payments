@@ -1,0 +1,146 @@
+<?php
+
+declare(strict_types=1);
+
+use Hakhant\Payments\Domain\Exceptions\ProviderUnavailableException;
+use Hakhant\Payments\Infrastructure\Http\HttpClient;
+use Hakhant\Payments\Infrastructure\Providers\AbstractProviderGateway;
+use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
+use Hakhant\Payments\Support\Logging\PaymentLogger;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\Http;
+use Psr\Log\LoggerInterface;
+
+final readonly class DummyProviderGateway extends AbstractProviderGateway
+{
+    public function publicBaseUrl(): string
+    {
+        return $this->baseUrl();
+    }
+
+    public function publicTimeout(): int
+    {
+        return $this->timeout();
+    }
+}
+
+afterEach(function (): void {
+    Mockery::close();
+});
+
+describe('HttpClient', function (): void {
+    it('post returns decoded array response', function (): void {
+        Http::fake([
+            'https://provider.test/post' => Http::response(['ok' => true], 200),
+        ]);
+
+        $client = new HttpClient;
+
+        expect($client->post('https://provider.test/post', ['a' => 1]))->toBe(['ok' => true]);
+    });
+
+    it('get returns decoded array response', function (): void {
+        Http::fake([
+            'https://provider.test/get*' => Http::response(['result' => 'ok'], 200),
+        ]);
+
+        $client = new HttpClient;
+
+        expect($client->get('https://provider.test/get', ['id' => 1]))->toBe(['result' => 'ok']);
+    });
+
+    it('post throws ProviderUnavailableException on request failure', function (): void {
+        Http::fake([
+            'https://provider.test/post' => Http::response(['error' => 'down'], 500),
+        ]);
+
+        $client = new HttpClient;
+
+        expect(fn (): array => $client->post('https://provider.test/post', []))
+            ->toThrow(ProviderUnavailableException::class, 'Provider request failed:');
+    });
+
+    it('get throws ProviderUnavailableException on request failure', function (): void {
+        Http::fake([
+            'https://provider.test/get*' => Http::response(['error' => 'down'], 500),
+        ]);
+
+        $client = new HttpClient;
+
+        expect(fn (): array => $client->get('https://provider.test/get'))
+            ->toThrow(ProviderUnavailableException::class, 'Provider request failed:');
+    });
+});
+
+describe('AbstractProviderGateway', function (): void {
+    it('exposes baseUrl and timeout from config', function (): void {
+        $gateway = new DummyProviderGateway(new HttpClient, [
+            'base_url' => 'https://base.test',
+            'timeout' => 45,
+        ]);
+
+        expect($gateway->publicBaseUrl())->toBe('https://base.test')
+            ->and($gateway->publicTimeout())->toBe(45);
+    });
+
+    it('uses defaults when values are missing', function (): void {
+        $gateway = new DummyProviderGateway(new HttpClient, []);
+
+        expect($gateway->publicBaseUrl())->toBe('')
+            ->and($gateway->publicTimeout())->toBe(30);
+    });
+});
+
+describe('CallbackIdempotencyGuard', function (): void {
+    it('uses prefixed cache key and ttl', function (): void {
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')
+            ->once()
+            ->with('myanmar-payments:callback:abc123', true, 120)
+            ->andReturn(true);
+
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        expect($guard->lock('abc123', 120))->toBeTrue();
+    });
+});
+
+describe('PaymentLogger', function (): void {
+    it('redacts sensitive keys on info logs', function (): void {
+        $logger = Mockery::mock(LoggerInterface::class);
+        $logger->shouldReceive('info')
+            ->once()
+            ->with('message', [
+                'secret' => '***',
+                'token' => '***',
+                'signature' => '***',
+                'authorization' => '***',
+                'amount' => 1000,
+            ]);
+
+        (new PaymentLogger($logger))->info('message', [
+            'secret' => 's',
+            'token' => 't',
+            'signature' => 'sig',
+            'authorization' => 'auth',
+            'amount' => 1000,
+        ]);
+    });
+
+    it('redacts case-insensitive sensitive keys on error logs', function (): void {
+        $logger = Mockery::mock(LoggerInterface::class);
+        $logger->shouldReceive('error')
+            ->once()
+            ->with('failed', [
+                'SeCrEt' => '***',
+                'ToKeN' => '***',
+                'other' => 'ok',
+            ]);
+
+        (new PaymentLogger($logger))->error('failed', [
+            'SeCrEt' => 'abc',
+            'ToKeN' => 'def',
+            'other' => 'ok',
+        ]);
+    });
+});
