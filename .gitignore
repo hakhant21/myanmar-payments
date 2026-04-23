@@ -3,3 +3,4 @@
 /composer.lock
 initialize.md
 release.sh
+.vscode/
