@@ -145,8 +145,21 @@ public function webhook(Request $request, PaymentManager $payments)
         throw new RuntimeException('Selected provider does not support callback verification.');
     }
 
+    // Whitelist provider callback fields instead of accepting the full request payload.
+    $callbackData = $request->only([
+        'merch_order_id',
+        'prepay_id',
+        'mm_order_id',
+        'trade_status',
+        'trade_type',
+        'total_amount',
+        'currency',
+        'pay_success_time',
+        'nonce_str',
+    ]);
+
     $payload = new CallbackPayload(
-        payload: $request->all(),
+        payload: $callbackData,
         signature: (string) $request->header('X-Signature', ''),
         timestamp: $request->header('X-Timestamp') !== null
             ? (int) $request->header('X-Timestamp')
@@ -160,6 +173,16 @@ public function webhook(Request $request, PaymentManager $payments)
     return response()->json(['ok' => true]);
 }
 ```
+
+### Webhook Security Notes
+
+- Whitelist only the callback fields your provider signs. Avoid using full request payloads.
+- Keep signature input format consistent with provider docs (raw body vs parsed fields).
+- Reject callbacks with missing signature headers.
+- Enforce replay protection using timestamp validation (for example, reject if older than 5 minutes).
+- Use idempotency keys (such as `prepay_id` or provider transaction ID) to prevent duplicate processing.
+- Return non-2xx for invalid signatures and do not mutate payment state.
+- Log minimal callback metadata and redact sensitive values.
 
 ### MMQR Usage
 
