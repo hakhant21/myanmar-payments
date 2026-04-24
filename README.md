@@ -1,6 +1,6 @@
 # Myanmar Payments
 
-Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMoney integrations, with secure callback verification, strict typing, and an extensible provider architecture.
+Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMoney, with secure callback verification, strict typing, and an extensible provider architecture.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
@@ -13,7 +13,7 @@ Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMon
 - PSR-4 autoloading
 - Strategy + Factory provider architecture
 - Provider adapter for 2C2P redirect checkout and refund maintenance
-- Provider adapter for WaveMoney payment creation and callback verification
+- Provider adapter for WaveMoney payment creation, MMQR creation, and callback verification
 - Provider adapter for KBZPay (including MMQR)
 - KBZ callback/request signature verification with canonical SHA256 signing
 - Laravel Service Provider + Facade integration
@@ -200,6 +200,7 @@ public function webhook(Request $request, PaymentManager $payments)
 ### WaveMoney Notes
 
 - `createPayment()` posts the documented form payload to WaveMoney `/payment` and returns a redirect `paymentUrl` using `/authenticate?transaction_id=...`.
+- `createMmqr()` is supported through the same WaveMoney `/payment` request flow and returns `MmqrResponse::qrCode` as the generated `/authenticate?transaction_id=...` URL.
 - Request hashing follows the WaveMoney formula: `time_to_live_in_seconds + merchant_id + order_id + amount + backend_result_url + merchant_reference_id` using HMAC SHA256.
 - Callback verification follows the WaveMoney callback formula and treats null values as the literal string `null`, as required by docs.
 - `queryStatus()` is intentionally unsupported for WaveMoney in this package because the provided docs define callback-driven status updates but no status inquiry endpoint.
@@ -225,7 +226,7 @@ use RuntimeException;
 
 public function createMmqr(PaymentManager $payments): array
 {
-    $gateway = $payments->provider('kbzpay');
+    $gateway = $payments->provider('wavemoney'); // or kbzpay
 
     if (! $gateway instanceof CanInitiateMmqr) {
         throw new RuntimeException('Selected provider does not support MMQR.');
@@ -247,6 +248,8 @@ public function createMmqr(PaymentManager $payments): array
     ];
 }
 ```
+
+For WaveMoney, `qr_code` is the Wave authenticate URL (`.../authenticate?transaction_id=...`) returned from payment initialization.
 
 ### Facade Usage
 

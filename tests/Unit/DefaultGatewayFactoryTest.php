@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Hakhant\Payments\Contracts\CanInitiateMmqr;
 use Hakhant\Payments\Contracts\PaymentGateway;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Factories\DefaultGatewayFactory;
@@ -79,7 +80,8 @@ describe('DefaultGatewayFactory::make()', function (): void {
 
     it('resolves wavemoney provider as WaveMoneyGateway', function (): void {
         $gateway = makeFactory()->make('wavemoney');
-        expect($gateway)->toBeInstanceOf(WaveMoneyGateway::class);
+        expect($gateway)->toBeInstanceOf(WaveMoneyGateway::class)
+            ->and($gateway)->toBeInstanceOf(CanInitiateMmqr::class);
     });
 
     it('throws ProviderException for unsupported provider', function (): void {

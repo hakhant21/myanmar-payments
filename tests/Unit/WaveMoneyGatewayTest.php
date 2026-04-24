@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\DTO\CallbackPayload;
+use Hakhant\Payments\Domain\DTO\MmqrRequest;
 use Hakhant\Payments\Domain\DTO\PaymentRequest;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
@@ -99,6 +100,58 @@ describe('WaveMoneyGateway::queryStatus()', function (): void {
 
         expect(fn (): mixed => $gateway->queryStatus('enc_tx_123'))
             ->toThrow(ProviderException::class, 'WaveMoney queryStatus is not supported by this provider.');
+    });
+});
+
+describe('WaveMoneyGateway::createMmqr()', function (): void {
+    it('creates MMQR request and returns authenticate url as qr code', function (): void {
+        Http::fake([
+            'https://testpayments.wavemoney.io:8107/payment' => Http::response([
+                'message' => 'success',
+                'transaction_id' => 'enc_mmqr_123',
+            ], 200),
+        ]);
+
+        $gateway = buildWaveMoneyGateway();
+
+        $response = $gateway->createMmqr(new MmqrRequest(
+            merchantReference: 'WMMQR-1',
+            amount: 1500,
+            currency: 'MMK',
+            notifyUrl: 'https://merchant.test/wave/mmqr/callback',
+            metadata: [
+                'order_id' => 'WMMQR-ORDER-1',
+                'frontend_result_url' => 'https://merchant.test/wave/mmqr/return',
+                'items' => [['name' => 'MMQR Item', 'amount' => 1500]],
+            ],
+        ));
+
+        expect($response->provider)->toBe('wavemoney')
+            ->and($response->transactionId)->toBe('enc_mmqr_123')
+            ->and($response->status)->toBe(PaymentStatus::PENDING)
+            ->and($response->qrCode)->toBe('https://testpayments.wavemoney.io/authenticate?transaction_id=enc_mmqr_123')
+            ->and($response->qrImage)->toBeNull();
+
+        Http::assertSent(function (Request $request): bool {
+            $body = $request->body();
+
+            return str_contains($body, 'merchant_reference_id=WMMQR-1')
+                && str_contains($body, 'order_id=WMMQR-ORDER-1')
+                && str_contains($body, 'backend_result_url=https%3A%2F%2Fmerchant.test%2Fwave%2Fmmqr%2Fcallback')
+                && str_contains($body, 'hash=');
+        });
+    });
+
+    it('throws ProviderException when MMQR items metadata cannot be encoded', function (): void {
+        $gateway = buildWaveMoneyGateway();
+
+        expect(fn (): mixed => $gateway->createMmqr(new MmqrRequest(
+            merchantReference: 'WMMQR-2',
+            amount: 1000,
+            currency: 'MMK',
+            notifyUrl: 'https://merchant.test/wave/mmqr/callback',
+            metadata: ['items' => [tmpfile()]],
+        )))->toThrow(ProviderException::class, 'WaveMoney MMQR items metadata is invalid.');
     });
 });
 
