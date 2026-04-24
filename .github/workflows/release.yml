@@ -43,9 +43,15 @@ jobs:
             - name: Bump version for next development cycle
               run: |
                   NEXT_VERSION="${{ steps.tag_version.outputs.next_version }}"
+                  CURRENT=$(cat VERSION | tr -d '[:space:]')
 
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
+
+                  if [ "$CURRENT" = "$NEXT_VERSION" ]; then
+                      echo "VERSION is already ${NEXT_VERSION} — skipping bump commit."
+                      exit 0
+                  fi
 
                   echo "${NEXT_VERSION}" > VERSION
                   git add VERSION
