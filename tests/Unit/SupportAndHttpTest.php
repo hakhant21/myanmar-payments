@@ -49,6 +49,17 @@ describe('HttpClient', function (): void {
         expect($client->get('https://provider.test/get', ['id' => 1]))->toBe(['result' => 'ok']);
     });
 
+    it('postRaw returns raw body response', function (): void {
+        Http::fake([
+            'https://provider.test/raw' => Http::response('accepted', 200, ['Content-Type' => 'text/plain']),
+        ]);
+
+        $client = new HttpClient;
+
+        expect($client->postRaw('https://provider.test/raw', '<request />', ['Content-Type' => 'text/plain']))
+            ->toBe('accepted');
+    });
+
     it('post throws ProviderUnavailableException on request failure', function (): void {
         Http::fake([
             'https://provider.test/post' => Http::response(['error' => 'down'], 500),
@@ -57,6 +68,17 @@ describe('HttpClient', function (): void {
         $client = new HttpClient;
 
         expect(fn (): array => $client->post('https://provider.test/post', []))
+            ->toThrow(ProviderUnavailableException::class, 'Provider request failed:');
+    });
+
+    it('postRaw throws ProviderUnavailableException on request failure', function (): void {
+        Http::fake([
+            'https://provider.test/raw' => Http::response('down', 500),
+        ]);
+
+        $client = new HttpClient;
+
+        expect(fn (): string => $client->postRaw('https://provider.test/raw', 'payload'))
             ->toThrow(ProviderUnavailableException::class, 'Provider request failed:');
     });
 

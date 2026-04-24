@@ -30,6 +30,26 @@ final readonly class HttpClient
     }
 
     /**
+     * @param  array<string, string>  $headers
+     */
+    public function postRaw(string $url, string $payload, array $headers = [], int $timeout = 30): string
+    {
+        try {
+            return $this->request($headers, $timeout)
+                ->withBody($payload, $headers['Content-Type'] ?? 'text/plain')
+                ->post($url)
+                ->throw()
+                ->body();
+        } catch (Throwable $throwable) {
+            throw new ProviderUnavailableException(
+                sprintf('Provider request failed: %s', $throwable->getMessage()),
+                (int) $throwable->getCode(),
+                $throwable,
+            );
+        }
+    }
+
+    /**
      * @param  array<string, scalar|array<array-key, mixed>|null>  $query
      * @param  array<string, string>  $headers
      * @return array<string, mixed>

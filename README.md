@@ -1,6 +1,6 @@
 # Myanmar Payments
 
-Laravel package for Myanmar payments, focused on KBZPay and MMQR, with secure webhook signature verification, strict typing, and an extensible provider architecture.
+Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMoney integrations, with secure callback verification, strict typing, and an extensible provider architecture.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
@@ -12,6 +12,8 @@ Laravel package for Myanmar payments, focused on KBZPay and MMQR, with secure we
 - Strict typing with `declare(strict_types=1);`
 - PSR-4 autoloading
 - Strategy + Factory provider architecture
+- Provider adapter for 2C2P redirect checkout and refund maintenance
+- Provider adapter for WaveMoney payment creation and callback verification
 - Provider adapter for KBZPay (including MMQR)
 - KBZ callback/request signature verification with canonical SHA256 signing
 - Laravel Service Provider + Facade integration
@@ -38,6 +40,28 @@ php artisan vendor:publish --tag=myanmar-payments-config
 
 ```dotenv
 MM_PAYMENT_PROVIDER=kbzpay
+
+TWOC2P_MERCHANT_ID=
+TWOC2P_SECRET_KEY=
+TWOC2P_MERCHANT_PRIVATE_KEY=
+TWOC2P_PUBLIC_KEY=
+TWOC2P_KEY_ID=
+TWOC2P_LOCALE=en
+TWOC2P_PAYMENT_DESCRIPTION=Payment
+TWOC2P_MAINTENANCE_VERSION=4.3
+TWOC2P_REFUND_NOTIFY_URL=
+TWOC2P_REFUND_IDEMPOTENCY_ID=
+TWOC2P_PAYMENT_TOKEN_URL=https://sandbox-pgw.2c2p.com/payment/4.3/paymentToken
+TWOC2P_TRANSACTION_STATUS_URL=https://sandbox-pgw.2c2p.com/payment/4.3/transactionStatus
+TWOC2P_REFUND_URL=https://demo2.2c2p.com/2C2PFrontend/PaymentAction/2.0/action
+
+WAVEMONEY_MERCHANT_ID=
+WAVEMONEY_SECRET_KEY=
+WAVEMONEY_MERCHANT_NAME=
+WAVEMONEY_PAYMENT_DESCRIPTION=Payment
+WAVEMONEY_TTL_SECONDS=600
+WAVEMONEY_PAYMENT_URL=https://testpayments.wavemoney.io:8107/payment
+WAVEMONEY_AUTHENTICATE_URL=https://testpayments.wavemoney.io/authenticate
 
 KBZPAY_MERCH_CODE=
 KBZPAY_MERCHANT_ID=
@@ -68,13 +92,14 @@ use Hakhant\Payments\Domain\DTO\PaymentRequest;
 
 public function checkout(PaymentManager $payments)
 {
-    $response = $payments->provider('kbzpay')->createPayment(
+    $response = $payments->provider('2c2p')->createPayment(
         new PaymentRequest(
             merchantReference: 'INV-1001',
             amount: 10000,
             currency: 'MMK',
             callbackUrl: 'https://example.com/payments/callback',
-            redirectUrl: 'https://example.com/payments/return'
+            redirectUrl: 'https://example.com/payments/return',
+            metadata: ['description' => 'Order INV-1001']
         )
     );
 
@@ -89,7 +114,7 @@ use Hakhant\Payments\Application\PaymentManager;
 
 public function status(string $transactionId, PaymentManager $payments): array
 {
-    $response = $payments->provider('kbzpay')->queryStatus($transactionId);
+    $response = $payments->provider('2c2p')->queryStatus($transactionId);
 
     return [
         'transaction_id' => $response->transactionId,
@@ -98,6 +123,8 @@ public function status(string $transactionId, PaymentManager $payments): array
     ];
 }
 ```
+
+For 2C2P, `transactionId` is the returned payment token because the transaction-status endpoint queries by payment token.
 
 ### Refund (Provider Optional Capability)
 
@@ -109,7 +136,7 @@ use RuntimeException;
 
 public function refund(string $transactionId, PaymentManager $payments): array
 {
-    $gateway = $payments->provider('kbzpay');
+    $gateway = $payments->provider('2c2p');
 
     if (! $gateway instanceof CanRefundPayment) {
         throw new RuntimeException('Selected provider does not support refunds.');
@@ -139,31 +166,15 @@ use RuntimeException;
 
 public function webhook(Request $request, PaymentManager $payments)
 {
-    $gateway = $payments->provider('kbzpay');
+    $gateway = $payments->provider('2c2p');
 
     if (! $gateway instanceof CanVerifyCallback) {
         throw new RuntimeException('Selected provider does not support callback verification.');
     }
 
-    // Whitelist provider callback fields instead of accepting the full request payload.
-    $callbackData = $request->only([
-        'merch_order_id',
-        'prepay_id',
-        'mm_order_id',
-        'trade_status',
-        'trade_type',
-        'total_amount',
-        'currency',
-        'pay_success_time',
-        'nonce_str',
-    ]);
-
     $payload = new CallbackPayload(
-        payload: $callbackData,
-        signature: (string) $request->header('X-Signature', ''),
-        timestamp: $request->header('X-Timestamp') !== null
-            ? (int) $request->header('X-Timestamp')
-            : null,
+        payload: ['payload' => (string) $request->input('payload', '')],
+        signature: '',
     );
 
     $valid = $gateway->verifyCallback($payload);
@@ -173,6 +184,26 @@ public function webhook(Request $request, PaymentManager $payments)
     return response()->json(['ok' => true]);
 }
 ```
+
+### 2C2P Notes
+
+- The implemented 2C2P provider supports hosted redirect checkout plus refund maintenance requests.
+- Use a sufficiently long HS256 secret key. `firebase/php-jwt` rejects short keys.
+- `createPayment()` requests a payment token and returns the hosted `webPaymentUrl`.
+- `queryStatus()` uses the transaction-status endpoint and expects the payment token returned by `createPayment()`.
+- Callback verification decodes and verifies the signed JWT payload returned by 2C2P.
+- `refund()` uses the payment-maintenance endpoint with XML wrapped in JWE/JWS using your merchant private key and the 2C2P public key.
+- Refund support requires PEM-formatted `TWOC2P_MERCHANT_PRIVATE_KEY` and `TWOC2P_PUBLIC_KEY` values from the 2C2P key-exchange setup.
+- `TWOC2P_KEY_ID` is optional and can be set when your 2C2P account expects a `kid` header in the signed JWS.
+- Asynchronous refund completion callbacks and refund-status inquiry are not wrapped yet. The current package support covers refund initiation and mapping the immediate maintenance response.
+
+### WaveMoney Notes
+
+- `createPayment()` posts the documented form payload to WaveMoney `/payment` and returns a redirect `paymentUrl` using `/authenticate?transaction_id=...`.
+- Request hashing follows the WaveMoney formula: `time_to_live_in_seconds + merchant_id + order_id + amount + backend_result_url + merchant_reference_id` using HMAC SHA256.
+- Callback verification follows the WaveMoney callback formula and treats null values as the literal string `null`, as required by docs.
+- `queryStatus()` is intentionally unsupported for WaveMoney in this package because the provided docs define callback-driven status updates but no status inquiry endpoint.
+- Treat callback status `PAYMENT_CONFIRMED` as success and verify hash before updating payment state.
 
 ### Webhook Security Notes
 
