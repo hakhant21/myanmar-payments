@@ -20,14 +20,14 @@ final readonly class KBZPayClient
      * @param  array<string, scalar|array<array-key, mixed>|null>  $bizContent
      * @return array<string, mixed>
      */
-    public function precreate(array $bizContent, KBZPaySignature $signature): array
+    public function precreate(array $bizContent, KBZPaySignature $signature, ?string $notifyUrl = null): array
     {
         $request = $this->makeRequest(
             method: 'kbz.payment.precreate',
             version: (string) ($this->config['versions']['precreate'] ?? '1.0'),
             bizContent: $bizContent,
             signature: $signature,
-            includeNotifyUrl: true,
+            notifyUrl: $notifyUrl ?? $this->configuredNotifyUrl(),
         );
 
         return $this->httpClient->post($this->precreateUrl(), ['Request' => $request], $this->headers(), $this->timeout());
@@ -44,7 +44,6 @@ final readonly class KBZPayClient
             version: (string) ($this->config['versions']['queryorder'] ?? '3.0'),
             bizContent: $bizContent,
             signature: $signature,
-            includeNotifyUrl: false,
         );
 
         return $this->httpClient->post($this->queryOrderUrl(), ['Request' => $request], $this->headers(), $this->timeout());
@@ -61,10 +60,15 @@ final readonly class KBZPayClient
             version: (string) ($this->config['versions']['refund'] ?? '1.0'),
             bizContent: $bizContent,
             signature: $signature,
-            includeNotifyUrl: false,
         );
 
-        return $this->httpClient->post($this->refundUrl(), ['Request' => $request], $this->headers(), $this->timeout());
+        return $this->httpClient->postWithOptions(
+            $this->refundUrl(),
+            ['Request' => $request],
+            $this->headers(),
+            $this->timeout(),
+            $this->refundHttpOptions(),
+        );
     }
 
     /**
@@ -73,12 +77,19 @@ final readonly class KBZPayClient
      */
     public function mmqrPrecreate(array $bizContent, KBZPaySignature $signature): array
     {
+        $notifyUrl = '';
+        if (array_key_exists('notify_url', $bizContent)) {
+            $rawNotifyUrl = $bizContent['notify_url'];
+            $notifyUrl = is_scalar($rawNotifyUrl) ? (string) $rawNotifyUrl : '';
+            unset($bizContent['notify_url']);
+        }
+
         $request = $this->makeRequest(
             method: 'kbz.payment.precreate',
             version: (string) ($this->config['versions']['mmqr'] ?? '1.0'),
             bizContent: $bizContent,
             signature: $signature,
-            includeNotifyUrl: true,
+            notifyUrl: $notifyUrl,
         );
 
         return $this->httpClient->post($this->mmqrUrl(), ['Request' => $request], $this->headers(), $this->timeout());
@@ -93,7 +104,7 @@ final readonly class KBZPayClient
         string $version,
         array $bizContent,
         KBZPaySignature $signature,
-        bool $includeNotifyUrl,
+        string $notifyUrl = '',
     ): array {
         $request = [
             'timestamp' => (string) time(),
@@ -104,8 +115,8 @@ final readonly class KBZPayClient
             'biz_content' => $bizContent,
         ];
 
-        if ($includeNotifyUrl) {
-            $request['notify_url'] = (string) ($this->config['notify_url'] ?? '');
+        if ($notifyUrl !== '') {
+            $request['notify_url'] = $notifyUrl;
         }
 
         $request['sign'] = $signature->sign($this->signableFields($request), (string) ($this->config['secret'] ?? ''));
@@ -178,5 +189,33 @@ final readonly class KBZPayClient
     private function nonce(): string
     {
         return bin2hex(random_bytes(16));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function refundHttpOptions(): array
+    {
+        $options = [];
+
+        $certificatePath = (string) ($this->config['client_certificate_path'] ?? '');
+        if ($certificatePath !== '') {
+            $options['withOptions'] = ['cert' => $certificatePath];
+        }
+
+        $privateKeyPath = (string) ($this->config['client_certificate_key_path'] ?? '');
+        if ($privateKeyPath !== '') {
+            $withOptions = $options['withOptions'] ?? [];
+            $passphrase = (string) ($this->config['client_certificate_key_passphrase'] ?? '');
+            $withOptions['ssl_key'] = $passphrase !== '' ? [$privateKeyPath, $passphrase] : $privateKeyPath;
+            $options['withOptions'] = $withOptions;
+        }
+
+        return $options;
+    }
+
+    private function configuredNotifyUrl(): string
+    {
+        return (string) ($this->config['notify_url'] ?? '');
     }
 }

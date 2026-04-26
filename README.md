@@ -101,6 +101,9 @@ KBZPAY_MERCHANT_ID=
 KBZPAY_APP_ID=
 KBZPAY_SECRET=
 KBZPAY_PUBLIC_KEY=
+KBZPAY_CLIENT_CERTIFICATE_PATH=
+KBZPAY_CLIENT_CERTIFICATE_KEY_PATH=
+KBZPAY_CLIENT_CERTIFICATE_KEY_PASSPHRASE=
 KBZPAY_NOTIFY_URL=https://merchant.example.com/payments/kbzpay/callback
 KBZPAY_TRADE_TYPE=APP
 
@@ -363,7 +366,7 @@ Supported MMQR providers in this package are `KBZPay`, `AYA`, and `WaveMoney`.
 
 Notes by provider:
 
-- `KBZPay`: uses the standard `kbz.payment.precreate` endpoint for MMQR with `trade_type=PAY_BY_QRCODE`; KBZ returns MMQR QR data for MMQR-enabled merchants.
+- `KBZPay`: uses the standard `kbz.payment.precreate` endpoint for MMQR with `trade_type=PAY_BY_QRCODE`; MMQR `notify_url` is sent as a top-level request field, and refunds can use client TLS certificates when KBZ requires them.
 - `AYA`: uses the QR payment endpoint and maps returned `qrdata` into `MmqrResponse::qrCode`.
 - `WaveMoney`: uses the same payment creation endpoint as normal checkout and returns the authenticate URL as `qr_code`.
 - `2C2P`: MMQR is not implemented in this package because the current provider integration is focused on hosted checkout, status, refund maintenance, and callback verification.

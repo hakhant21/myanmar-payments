@@ -66,6 +66,21 @@ describe('KBZPayClient::precreate()', function (): void {
         });
     });
 
+    it('uses the passed notify_url for precreate requests', function (): void {
+        Http::fake([
+            'https://api.test/precreate' => Http::response(['Response' => ['result' => 'SUCCESS']], 200),
+        ]);
+
+        $client = unitClient();
+        $client->precreate(['appid' => 'APP'], $this->signature, 'https://example.test/runtime-callback');
+
+        Http::assertSent(function (Request $request): bool {
+            $payload = ($request->data())['Request'] ?? [];
+
+            return ($payload['notify_url'] ?? null) === 'https://example.test/runtime-callback';
+        });
+    });
+
     it('generates unique nonce_str for each call', function (): void {
         Http::fake([
             'https://api.test/precreate' => Http::response(['Response' => ['result' => 'SUCCESS']], 200),
@@ -129,14 +144,39 @@ describe('KBZPayClient::mmqrPrecreate()', function (): void {
         ]);
 
         $client = unitClient();
-        $client->mmqrPrecreate(['appid' => 'APP', 'trade_type' => 'PAY_BY_QRCODE', 'total_amount' => '2000'], $this->signature);
+        $client->mmqrPrecreate([
+            'appid' => 'APP',
+            'trade_type' => 'PAY_BY_QRCODE',
+            'total_amount' => '2000',
+            'notify_url' => 'https://example.test/mmqr-callback',
+        ], $this->signature);
 
         Http::assertSent(function (Request $request): bool {
             $payload = ($request->data())['Request'] ?? [];
+            $biz = $payload['biz_content'] ?? [];
 
             return $request->url() === 'https://api.test/precreate'
                 && ($payload['method'] ?? null) === 'kbz.payment.precreate'
-                && isset($payload['notify_url']);
+                && ($payload['notify_url'] ?? null) === 'https://example.test/mmqr-callback'
+                && ! array_key_exists('notify_url', is_array($biz) ? $biz : []);
         });
+    });
+
+    it('uses configured client certificate options for refunds when provided', function (): void {
+        Http::fake([
+            'https://api.test/refund' => Http::response(['Response' => ['result' => 'SUCCESS']], 200),
+        ]);
+
+        $client = unitClient([
+            'client_certificate_path' => '/tmp/kbzpay-cert.pem',
+            'client_certificate_key_path' => '/tmp/kbzpay-key.pem',
+            'client_certificate_key_passphrase' => 'secret-pass',
+        ]);
+
+        $client->refund(['appid' => 'APP', 'refund_request_no' => 'REF001'], $this->signature);
+
+        $request = Http::recorded()[0][0];
+
+        expect($request->url())->toBe('https://api.test/refund');
     });
 });

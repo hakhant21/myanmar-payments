@@ -49,6 +49,11 @@ final readonly class MyanmarPayments
         return $this->paymentManager->verifyCallback($payload, $provider);
     }
 
+    public function callbackSuccessResponse(Provider|string|null $provider = null): string
+    {
+        return $this->paymentManager->callbackSuccessResponse($provider);
+    }
+
     public function supportsMmqr(Provider|string|null $provider = null): bool
     {
         return $this->paymentManager->supportsMmqr($provider);

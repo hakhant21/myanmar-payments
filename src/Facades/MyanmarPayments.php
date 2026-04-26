@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static MmqrResponse createMmqr(MmqrRequest $request, Provider|string|null $provider = null)
  * @method static RefundResponse refund(RefundRequest $request, Provider|string|null $provider = null)
  * @method static bool verifyCallback(CallbackPayload $payload, Provider|string|null $provider = null)
+ * @method static string callbackSuccessResponse(Provider|string|null $provider = null)
  * @method static bool supportsMmqr(Provider|string|null $provider = null)
  * @method static bool supportsRefunds(Provider|string|null $provider = null)
  * @method static bool supportsCallbackVerification(Provider|string|null $provider = null)

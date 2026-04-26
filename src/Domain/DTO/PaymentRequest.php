@@ -35,6 +35,10 @@ final readonly class PaymentRequest
             throw new ValidationException('callbackUrl must be a valid URL.');
         }
 
+        if (parse_url($this->callbackUrl, PHP_URL_QUERY) !== null) {
+            throw new ValidationException('callbackUrl must not contain query parameters.');
+        }
+
         if (! filter_var($this->redirectUrl, FILTER_VALIDATE_URL)) {
             throw new ValidationException('redirectUrl must be a valid URL.');
         }

@@ -75,6 +75,16 @@ describe('PaymentRequest', function (): void {
         ))->toThrow(ValidationException::class, 'callbackUrl must be a valid URL');
     });
 
+    it('throws ValidationException when callbackUrl contains query parameters', function (): void {
+        expect(fn (): PaymentRequest => new PaymentRequest(
+            merchantReference: 'ORD001',
+            amount: 1000,
+            currency: 'MMK',
+            callbackUrl: 'https://example.test/callback?foo=bar',
+            redirectUrl: 'https://example.test/return',
+        ))->toThrow(ValidationException::class, 'callbackUrl must not contain query parameters');
+    });
+
     it('throws ValidationException when redirectUrl is invalid', function (): void {
         expect(fn (): PaymentRequest => new PaymentRequest(
             merchantReference: 'ORD001',
@@ -126,6 +136,13 @@ describe('RefundRequest', function (): void {
     it('allows empty reason defaulting to empty string', function (): void {
         $request = new RefundRequest(transactionId: 'ORD001', amount: 100);
         expect($request->reason)->toBe('');
+    });
+
+    it('allows null amount for provider full refund flows', function (): void {
+        $request = new RefundRequest(transactionId: 'ORD001', amount: null, metadata: ['is_last_refund' => true]);
+
+        expect($request->amount)->toBeNull()
+            ->and($request->metadata)->toBe(['is_last_refund' => true]);
     });
 
     it('throws ValidationException when transactionId is empty', function (): void {
@@ -188,6 +205,15 @@ describe('MmqrRequest', function (): void {
             currency: 'MMK',
             notifyUrl: 'not-a-url',
         ))->toThrow(ValidationException::class, 'notifyUrl must be a valid URL');
+    });
+
+    it('throws ValidationException for notifyUrl with query parameters', function (): void {
+        expect(fn (): MmqrRequest => new MmqrRequest(
+            merchantReference: 'M001',
+            amount: 100,
+            currency: 'MMK',
+            notifyUrl: 'https://example.test/notify?foo=bar',
+        ))->toThrow(ValidationException::class, 'notifyUrl must not contain query parameters');
     });
 
     it('serializes to array correctly', function (): void {

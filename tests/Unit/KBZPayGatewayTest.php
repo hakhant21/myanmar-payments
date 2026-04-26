@@ -108,14 +108,40 @@ describe('KBZPayGateway::createPayment()', function (): void {
         ));
 
         Http::assertSent(function (Request $request): bool {
-            $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
+            $payload = ($request->data())['Request'] ?? [];
+            $biz = $payload['biz_content'] ?? [];
 
             return ($biz['appid'] ?? null) === 'TEST_APP_ID'
                 && ($biz['merch_code'] ?? null) === 'TEST_MERCH'
                 && ($biz['merch_order_id'] ?? null) === 'ORD999'
                 && ($biz['total_amount'] ?? null) === '2500'
                 && ($biz['trans_currency'] ?? null) === 'MMK'
-                && ($biz['title'] ?? null) === 'My Product';
+                && ($biz['title'] ?? null) === 'My Product'
+                && ($payload['notify_url'] ?? null) === 'https://example.test/callback';
+        });
+    });
+
+    it('uses the request callbackUrl instead of config notify_url', function (): void {
+        Http::fake([
+            'https://api.test/precreate' => Http::response([
+                'Response' => ['merch_order_id' => 'ORD-CB-001', 'trade_status' => 'WAIT_PAY'],
+            ], 200),
+        ]);
+
+        [$gateway] = buildGateway(['notify_url' => 'https://example.test/config-callback']);
+
+        $gateway->createPayment(new PaymentRequest(
+            merchantReference: 'ORD-CB-001',
+            amount: 2500,
+            currency: 'MMK',
+            callbackUrl: 'https://example.test/request-callback',
+            redirectUrl: 'https://example.test/return',
+        ));
+
+        Http::assertSent(function (Request $request): bool {
+            $payload = ($request->data())['Request'] ?? [];
+
+            return ($payload['notify_url'] ?? null) === 'https://example.test/request-callback';
         });
     });
 });
@@ -203,6 +229,30 @@ describe('KBZPayGateway::refund()', function (): void {
                 && ($biz['refund_reason'] ?? null) === 'Customer requested cancellation';
         });
     });
+
+    it('supports KBZ full refunds without refund_amount and with is_last_refund', function (): void {
+        Http::fake([
+            'https://api.test/refund' => Http::response([
+                'Response' => ['refund_order_id' => 'REF004', 'refund_status' => 'REFUND_SUCCESS'],
+            ], 200),
+        ]);
+
+        [$gateway] = buildGateway();
+
+        $gateway->refund(new RefundRequest(
+            transactionId: 'ORD004',
+            amount: null,
+            reason: 'Full refund',
+            metadata: ['is_last_refund' => true],
+        ));
+
+        Http::assertSent(function (Request $request): bool {
+            $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
+
+            return ($biz['is_last_refund'] ?? null) === 'Y'
+                && ! array_key_exists('refund_amount', $biz);
+        });
+    });
 });
 
 describe('KBZPayGateway::verifyCallback()', function (): void {
@@ -276,10 +326,12 @@ describe('KBZPayGateway::createMmqr()', function (): void {
             ->and($response->qrCode)->toBe('00020101...');
 
         Http::assertSent(function (Request $request): bool {
-            $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
+            $payload = ($request->data())['Request'] ?? [];
+            $biz = $payload['biz_content'] ?? [];
 
             return ($biz['trade_type'] ?? null) === 'PAY_BY_QRCODE'
-                && ($biz['notify_url'] ?? null) === 'https://example.test/notify';
+                && ($payload['notify_url'] ?? null) === 'https://example.test/notify'
+                && ! array_key_exists('notify_url', is_array($biz) ? $biz : []);
         });
     });
 });

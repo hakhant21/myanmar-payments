@@ -35,6 +35,10 @@ final readonly class MmqrRequest
         if ($this->notifyUrl === '' || filter_var($this->notifyUrl, FILTER_VALIDATE_URL) === false) {
             throw new ValidationException('notifyUrl must be a valid URL.');
         }
+
+        if (parse_url($this->notifyUrl, PHP_URL_QUERY) !== null) {
+            throw new ValidationException('notifyUrl must not contain query parameters.');
+        }
     }
 
     /**

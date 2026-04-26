@@ -42,7 +42,11 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
             'callback_info' => $this->callbackInfo($request),
         ];
 
-        return $this->mapper->toPaymentResponse($this->client->precreate($bizContent, $this->signature));
+        return $this->mapper->toPaymentResponse($this->client->precreate(
+            $bizContent,
+            $this->signature,
+            $request->callbackUrl,
+        ));
     }
 
     public function queryStatus(string $transactionId): PaymentResponse
@@ -64,11 +68,18 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
             'merch_order_id' => $request->transactionId,
             'refund_request_no' => $this->refundRequestNo($request),
             'refund_reason' => $request->reason !== '' ? $request->reason : 'merchant_refund',
-            'refund_amount' => (string) $request->amount,
             'sub_type' => $this->stringConfig('sub_type'),
             'sub_identifier_type' => $this->stringConfig('sub_identifier_type'),
             'sub_identifier' => $this->stringConfig('sub_identifier'),
         ];
+
+        if ($request->amount !== null) {
+            $bizContent['refund_amount'] = (string) $request->amount;
+        }
+
+        if ($this->isLastRefund($request)) {
+            $bizContent['is_last_refund'] = 'Y';
+        }
 
         return $this->mapper->toRefundResponse($this->client->refund($bizContent, $this->signature));
     }
@@ -97,10 +108,16 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
             'total_amount' => (string) $request->amount,
             'trans_currency' => $request->currency,
             'timeout_express' => $this->timeoutExpress($request->metadata),
-            'notify_url' => $request->notifyUrl,
         ];
 
+        $bizContent['notify_url'] = $request->notifyUrl;
+
         return $this->mapper->toMmqrResponse($this->client->mmqrPrecreate($bizContent, $this->signature));
+    }
+
+    public function callbackSuccessResponse(): string
+    {
+        return 'success';
     }
 
     private function appId(): string
@@ -145,6 +162,13 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
         }
 
         return $request->transactionId.'-refund';
+    }
+
+    private function isLastRefund(RefundRequest $request): bool
+    {
+        $configured = $request->metadata['is_last_refund'] ?? $request->metadata['isLastRefund'] ?? false;
+
+        return $configured === true || $configured === 'Y' || $configured === 'y';
     }
 
     private function stringConfig(string $key, string $default = ''): string

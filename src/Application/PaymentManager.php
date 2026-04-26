@@ -85,6 +85,20 @@ final readonly class PaymentManager
         return $gateway->verifyCallback($payload);
     }
 
+    public function callbackSuccessResponse(Provider|string|null $provider = null): string
+    {
+        $gateway = $this->provider($provider);
+
+        if (method_exists($gateway, 'callbackSuccessResponse')) {
+            /** @var callable(): string $callback */
+            $callback = [$gateway, 'callbackSuccessResponse'];
+
+            return $callback();
+        }
+
+        return 'success';
+    }
+
     public function supportsMmqr(Provider|string|null $provider = null): bool
     {
         return $this->provider($provider) instanceof CanInitiateMmqr;

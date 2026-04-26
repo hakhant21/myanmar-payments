@@ -13,7 +13,7 @@ final readonly class RefundRequest
      */
     public function __construct(
         public string $transactionId,
-        public int $amount,
+        public ?int $amount,
         public string $reason = '',
         public array $metadata = [],
     ) {
@@ -21,7 +21,7 @@ final readonly class RefundRequest
             throw new ValidationException('transactionId is required.');
         }
 
-        if ($this->amount <= 0) {
+        if ($this->amount !== null && $this->amount <= 0) {
             throw new ValidationException('amount must be greater than zero.');
         }
     }
