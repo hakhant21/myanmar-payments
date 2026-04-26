@@ -31,15 +31,15 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     public function createPayment(PaymentRequest $request): PaymentResponse
     {
         $bizContent = [
-            'appid' => (string) ($this->config['app_id'] ?? ''),
-            'merch_code' => (string) ($this->config['merchant_code'] ?? $this->config['merchant_id'] ?? ''),
+            'appid' => $this->appId(),
+            'merch_code' => $this->merchantCode(),
             'merch_order_id' => $request->merchantReference,
-            'trade_type' => (string) ($this->config['trade_type'] ?? 'APP'),
-            'title' => (string) ($request->metadata['title'] ?? 'Payment'),
+            'trade_type' => $this->tradeType(),
+            'title' => $this->paymentTitle($request),
             'total_amount' => (string) $request->amount,
             'trans_currency' => $request->currency,
-            'timeout_express' => (string) ($request->metadata['timeout_express'] ?? '120m'),
-            'callback_info' => (string) ($request->metadata['callback_info'] ?? ''),
+            'timeout_express' => $this->timeoutExpress($request->metadata),
+            'callback_info' => $this->callbackInfo($request),
         ];
 
         return $this->mapper->toPaymentResponse($this->client->precreate($bizContent, $this->signature));
@@ -48,8 +48,8 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     public function queryStatus(string $transactionId): PaymentResponse
     {
         $bizContent = [
-            'appid' => (string) ($this->config['app_id'] ?? ''),
-            'merch_code' => (string) ($this->config['merchant_code'] ?? $this->config['merchant_id'] ?? ''),
+            'appid' => $this->appId(),
+            'merch_code' => $this->merchantCode(),
             'merch_order_id' => $transactionId,
         ];
 
@@ -59,15 +59,15 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     public function refund(RefundRequest $request): RefundResponse
     {
         $bizContent = [
-            'appid' => (string) ($this->config['app_id'] ?? ''),
-            'merch_code' => (string) ($this->config['merchant_code'] ?? $this->config['merchant_id'] ?? ''),
+            'appid' => $this->appId(),
+            'merch_code' => $this->merchantCode(),
             'merch_order_id' => $request->transactionId,
             'refund_request_no' => $request->reason !== '' ? $request->reason : $request->transactionId.'-refund',
             'refund_reason' => $request->reason !== '' ? $request->reason : 'merchant_refund',
             'refund_amount' => (string) $request->amount,
-            'sub_type' => (string) ($this->config['sub_type'] ?? ''),
-            'sub_identifier_type' => (string) ($this->config['sub_identifier_type'] ?? ''),
-            'sub_identifier' => (string) ($this->config['sub_identifier'] ?? ''),
+            'sub_type' => $this->stringConfig('sub_type'),
+            'sub_identifier_type' => $this->stringConfig('sub_identifier_type'),
+            'sub_identifier' => $this->stringConfig('sub_identifier'),
         ];
 
         return $this->mapper->toRefundResponse($this->client->refund($bizContent, $this->signature));
@@ -90,16 +90,54 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     public function createMmqr(MmqrRequest $request): MmqrResponse
     {
         $bizContent = [
-            'appid' => (string) ($this->config['app_id'] ?? ''),
-            'merch_code' => (string) ($this->config['merchant_code'] ?? $this->config['merchant_id'] ?? ''),
+            'appid' => $this->appId(),
+            'merch_code' => $this->merchantCode(),
             'merch_order_id' => $request->merchantReference,
             'trade_type' => 'MMQR',
             'total_amount' => (string) $request->amount,
             'trans_currency' => $request->currency,
-            'timeout_express' => (string) ($request->metadata['timeout_express'] ?? '120m'),
+            'timeout_express' => $this->timeoutExpress($request->metadata),
             'notify_url' => $request->notifyUrl,
         ];
 
         return $this->mapper->toMmqrResponse($this->client->mmqrPrecreate($bizContent, $this->signature));
+    }
+
+    private function appId(): string
+    {
+        return $this->stringConfig('app_id');
+    }
+
+    private function merchantCode(): string
+    {
+        return (string) ($this->config['merchant_code'] ?? $this->config['merchant_id'] ?? '');
+    }
+
+    private function tradeType(): string
+    {
+        return $this->stringConfig('trade_type', 'APP');
+    }
+
+    private function paymentTitle(PaymentRequest $request): string
+    {
+        return (string) ($request->metadata['title'] ?? 'Payment');
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function timeoutExpress(array $metadata): string
+    {
+        return (string) ($metadata['timeout_express'] ?? '120m');
+    }
+
+    private function callbackInfo(PaymentRequest $request): string
+    {
+        return (string) ($request->metadata['callback_info'] ?? '');
+    }
+
+    private function stringConfig(string $key, string $default = ''): string
+    {
+        return (string) ($this->config[$key] ?? $default);
     }
 }

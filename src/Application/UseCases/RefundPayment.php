@@ -8,13 +8,14 @@ use Hakhant\Payments\Application\PaymentManager;
 use Hakhant\Payments\Contracts\CanRefundPayment;
 use Hakhant\Payments\Domain\DTO\RefundRequest;
 use Hakhant\Payments\Domain\DTO\RefundResponse;
+use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 
 final readonly class RefundPayment
 {
     public function __construct(private PaymentManager $paymentManager) {}
 
-    public function handle(RefundRequest $request, ?string $provider = null): RefundResponse
+    public function handle(RefundRequest $request, Provider|string|null $provider = null): RefundResponse
     {
         $gateway = $this->paymentManager->provider($provider);
 

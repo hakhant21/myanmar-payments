@@ -7,13 +7,14 @@ namespace Hakhant\Payments\Application\UseCases;
 use Hakhant\Payments\Application\PaymentManager;
 use Hakhant\Payments\Contracts\CanVerifyCallback;
 use Hakhant\Payments\Domain\DTO\CallbackPayload;
+use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 
 final readonly class VerifyCallback
 {
     public function __construct(private PaymentManager $paymentManager) {}
 
-    public function handle(CallbackPayload $payload, ?string $provider = null): bool
+    public function handle(CallbackPayload $payload, Provider|string|null $provider = null): bool
     {
         $gateway = $this->paymentManager->provider($provider);
 

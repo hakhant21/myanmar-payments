@@ -9,7 +9,7 @@ use Hakhant\Payments\Domain\Exceptions\ValidationException;
 final readonly class PaymentRequest
 {
     /**
-     * @param  array<string, scalar|null>  $metadata
+     * @param  array<string, mixed>  $metadata
      */
     public function __construct(
         public string $merchantReference,

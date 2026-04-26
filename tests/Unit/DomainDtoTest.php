@@ -113,6 +113,16 @@ describe('RefundRequest', function (): void {
             ->and($request->reason)->toBe('Customer request');
     });
 
+    it('stores optional metadata for provider-specific refund fields', function (): void {
+        $request = new RefundRequest(
+            transactionId: 'ORD001',
+            amount: 500,
+            metadata: ['reference_number' => 'REF-001'],
+        );
+
+        expect($request->metadata)->toBe(['reference_number' => 'REF-001']);
+    });
+
     it('allows empty reason defaulting to empty string', function (): void {
         $request = new RefundRequest(transactionId: 'ORD001', amount: 100);
         expect($request->reason)->toBe('');

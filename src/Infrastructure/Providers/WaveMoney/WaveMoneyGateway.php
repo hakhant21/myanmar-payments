@@ -28,41 +28,17 @@ final readonly class WaveMoneyGateway implements CanInitiateMmqr, CanVerifyCallb
 
     public function createPayment(PaymentRequest $request): PaymentResponse
     {
-        $items = $request->metadata['items'] ?? [['name' => (string) ($request->metadata['item_name'] ?? 'Order'), 'amount' => $request->amount]];
-
-        $payload = [
-            'time_to_live_in_seconds' => (string) ($request->metadata['time_to_live_in_seconds'] ?? $this->config['time_to_live_in_seconds'] ?? 600),
-            'merchant_id' => $this->merchantId(),
-            'order_id' => (string) ($request->metadata['order_id'] ?? $request->merchantReference),
-            'merchant_reference_id' => $request->merchantReference,
-            'frontend_result_url' => $request->redirectUrl,
-            'backend_result_url' => $request->callbackUrl,
-            'amount' => (string) $request->amount,
-            'payment_description' => (string) ($request->metadata['payment_description'] ?? $request->metadata['description'] ?? $this->config['payment_description'] ?? 'Payment'),
-            'merchant_name' => (string) ($request->metadata['merchant_name'] ?? $this->config['merchant_name'] ?? 'Merchant'),
-            'items' => json_encode($items, JSON_UNESCAPED_SLASHES),
-        ];
-
-        if (! is_string($payload['items'])) {
-            throw new ProviderException('WaveMoney items metadata is invalid.');
-        }
-
-        $payload['hash'] = $this->hash->sign([
-            $payload['time_to_live_in_seconds'],
-            $payload['merchant_id'],
-            $payload['order_id'],
-            $payload['amount'],
-            $payload['backend_result_url'],
-            $payload['merchant_reference_id'],
-        ], $this->secretKey());
-
-        $response = $this->client->createPayment($payload);
-        $transactionId = (string) ($response['transaction_id'] ?? '');
-
-        return $this->mapper->toCreatePaymentResponse(
-            $response,
-            $transactionId !== '' ? $this->client->authenticateUrl($transactionId) : '',
+        $response = $this->createTransaction(
+            merchantReference: $request->merchantReference,
+            amount: $request->amount,
+            metadata: $request->metadata,
+            frontendResultUrl: $request->redirectUrl,
+            backendResultUrl: $request->callbackUrl,
+            defaultItemName: 'Order',
+            itemsErrorMessage: 'WaveMoney items metadata is invalid.',
         );
+
+        return $this->mapper->toCreatePaymentResponse($response, $this->authenticateUrl($response));
     }
 
     public function queryStatus(string $transactionId): PaymentResponse
@@ -74,40 +50,19 @@ final readonly class WaveMoneyGateway implements CanInitiateMmqr, CanVerifyCallb
 
     public function createMmqr(MmqrRequest $request): MmqrResponse
     {
-        $items = $request->metadata['items'] ?? [['name' => (string) ($request->metadata['item_name'] ?? 'MMQR Payment'), 'amount' => $request->amount]];
-
-        $payload = [
-            'time_to_live_in_seconds' => (string) ($request->metadata['time_to_live_in_seconds'] ?? $this->config['time_to_live_in_seconds'] ?? 600),
-            'merchant_id' => $this->merchantId(),
-            'order_id' => (string) ($request->metadata['order_id'] ?? $request->merchantReference),
-            'merchant_reference_id' => $request->merchantReference,
-            'frontend_result_url' => (string) ($request->metadata['frontend_result_url'] ?? $request->notifyUrl),
-            'backend_result_url' => $request->notifyUrl,
-            'amount' => (string) $request->amount,
-            'payment_description' => (string) ($request->metadata['payment_description'] ?? $request->metadata['description'] ?? $this->config['payment_description'] ?? 'Payment'),
-            'merchant_name' => (string) ($request->metadata['merchant_name'] ?? $this->config['merchant_name'] ?? 'Merchant'),
-            'items' => json_encode($items, JSON_UNESCAPED_SLASHES),
-        ];
-
-        if (! is_string($payload['items'])) {
-            throw new ProviderException('WaveMoney MMQR items metadata is invalid.');
-        }
-
-        $payload['hash'] = $this->hash->sign([
-            $payload['time_to_live_in_seconds'],
-            $payload['merchant_id'],
-            $payload['order_id'],
-            $payload['amount'],
-            $payload['backend_result_url'],
-            $payload['merchant_reference_id'],
-        ], $this->secretKey());
-
-        $response = $this->client->createPayment($payload);
-        $transactionId = (string) ($response['transaction_id'] ?? '');
+        $response = $this->createTransaction(
+            merchantReference: $request->merchantReference,
+            amount: $request->amount,
+            metadata: $request->metadata,
+            frontendResultUrl: (string) ($request->metadata['frontend_result_url'] ?? $request->notifyUrl),
+            backendResultUrl: $request->notifyUrl,
+            defaultItemName: 'MMQR Payment',
+            itemsErrorMessage: 'WaveMoney MMQR items metadata is invalid.',
+        );
 
         return $this->mapper->toMmqrResponse(
             $response,
-            $transactionId !== '' ? $this->client->authenticateUrl($transactionId) : '',
+            $this->authenticateUrl($response),
         );
     }
 
@@ -147,5 +102,100 @@ final readonly class WaveMoneyGateway implements CanInitiateMmqr, CanVerifyCallb
     private function secretKey(): string
     {
         return (string) ($this->config['secret_key'] ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     * @return array<string, mixed>
+     */
+    private function createTransaction(
+        string $merchantReference,
+        int $amount,
+        array $metadata,
+        string $frontendResultUrl,
+        string $backendResultUrl,
+        string $defaultItemName,
+        string $itemsErrorMessage,
+    ): array {
+        $payload = [
+            'time_to_live_in_seconds' => $this->timeToLive($metadata),
+            'merchant_id' => $this->merchantId(),
+            'order_id' => $this->orderId($merchantReference, $metadata),
+            'merchant_reference_id' => $merchantReference,
+            'frontend_result_url' => $frontendResultUrl,
+            'backend_result_url' => $backendResultUrl,
+            'amount' => (string) $amount,
+            'payment_description' => $this->paymentDescription($metadata),
+            'merchant_name' => $this->merchantName($metadata),
+            'items' => $this->itemsJson($metadata, $amount, $defaultItemName, $itemsErrorMessage),
+        ];
+
+        $payload['hash'] = $this->hash->sign([
+            $payload['time_to_live_in_seconds'],
+            $payload['merchant_id'],
+            $payload['order_id'],
+            $payload['amount'],
+            $payload['backend_result_url'],
+            $payload['merchant_reference_id'],
+        ], $this->secretKey());
+
+        return $this->client->createPayment($payload);
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function timeToLive(array $metadata): string
+    {
+        return (string) ($metadata['time_to_live_in_seconds'] ?? $this->config['time_to_live_in_seconds'] ?? 600);
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function orderId(string $merchantReference, array $metadata): string
+    {
+        return (string) ($metadata['order_id'] ?? $merchantReference);
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function paymentDescription(array $metadata): string
+    {
+        return (string) ($metadata['payment_description'] ?? $metadata['description'] ?? $this->config['payment_description'] ?? 'Payment');
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function merchantName(array $metadata): string
+    {
+        return (string) ($metadata['merchant_name'] ?? $this->config['merchant_name'] ?? 'Merchant');
+    }
+
+    /**
+     * @param  array<string, mixed>  $metadata
+     */
+    private function itemsJson(array $metadata, int $amount, string $defaultItemName, string $errorMessage): string
+    {
+        $items = $metadata['items'] ?? [['name' => (string) ($metadata['item_name'] ?? $defaultItemName), 'amount' => $amount]];
+        $encoded = json_encode($items, JSON_UNESCAPED_SLASHES);
+
+        if (! is_string($encoded)) {
+            throw new ProviderException($errorMessage);
+        }
+
+        return $encoded;
+    }
+
+    /**
+     * @param  array<string, mixed>  $response
+     */
+    private function authenticateUrl(array $response): string
+    {
+        $transactionId = (string) ($response['transaction_id'] ?? '');
+
+        return $transactionId !== '' ? $this->client->authenticateUrl($transactionId) : '';
     }
 }

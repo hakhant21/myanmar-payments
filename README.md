@@ -1,6 +1,6 @@
 # Myanmar Payments
 
-Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMoney, with secure callback verification, strict typing, and an extensible provider architecture.
+Laravel package for Myanmar payment providers with a single gateway-selection flow across KBZPay, AYA Pay, 2C2P, and WaveMoney. The package is organized around provider adapters, typed request/response DTOs, optional capability contracts for refunds, callbacks, and MMQR, plus Laravel container and facade integration.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
@@ -11,12 +11,16 @@ Laravel package for Myanmar payments, focused on KBZPay, MMQR, 2C2P, and WaveMon
 
 - Strict typing with `declare(strict_types=1);`
 - PSR-4 autoloading
-- Strategy + Factory provider architecture
+- Provider-driven architecture with `PaymentManager`, `GatewayContract`, and provider-specific gateway adapters
+- Typed DTOs for payments, refunds, MMQR, and callbacks
+- Provider capability contracts for refund, callback verification, and MMQR support
+- Application use cases for payment creation, MMQR creation, refunds, status queries, and callback verification
 - Provider adapter for 2C2P redirect checkout and refund maintenance
+- Provider adapter for AYA Pay push payment, QR payment, status query, and refund
 - Provider adapter for WaveMoney payment creation, MMQR creation, and callback verification
-- Provider adapter for KBZPay (including MMQR)
-- KBZ callback/request signature verification with canonical SHA256 signing
-- Laravel Service Provider + Facade integration
+- Provider adapter for KBZPay payment, refund, callback verification, and MMQR
+- Enum-based or string-based provider selection through `Provider` and `PaymentManager::provider()`
+- Laravel service provider and facade integration
 - Tooling: Pint, Rector, PHPStan, Pest
 
 ## Requirements
@@ -55,6 +59,18 @@ TWOC2P_PAYMENT_TOKEN_URL=https://sandbox-pgw.2c2p.com/payment/4.3/paymentToken
 TWOC2P_TRANSACTION_STATUS_URL=https://sandbox-pgw.2c2p.com/payment/4.3/transactionStatus
 TWOC2P_REFUND_URL=https://demo2.2c2p.com/2C2PFrontend/PaymentAction/2.0/action
 
+AYA_BASIC_TOKEN=
+AYA_PHONE=
+AYA_PASSWORD=
+AYA_SERVICE_CODE=
+AYA_TIME_LIMIT=
+AYA_LOGIN_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/login
+AYA_PUSH_PAYMENT_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/requestPushPayment
+AYA_PUSH_PAYMENT_V2_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/v2/requestPushPayment
+AYA_QUERY_PAYMENT_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/checkRequestPayment
+AYA_QR_PAYMENT_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/requestQRPayment
+AYA_REFUND_PAYMENT_URL=https://opensandbox.ayainnovation.com/merchant/1.0.0/thirdparty/merchant/refundPayment
+
 WAVEMONEY_MERCHANT_ID=
 WAVEMONEY_SECRET_KEY=
 WAVEMONEY_MERCHANT_NAME=
@@ -86,13 +102,81 @@ KBZPAY_MMQR_URL=https://api.kbzpay.com/payment/gateway/mmqrprecreate
 
 ## Usage
 
+### Package Flow
+
+1. Configure provider credentials in `config/myanmar-payments.php`
+2. Resolve a gateway through `PaymentManager` or the `MyanmarPayments` facade, or use an application use case
+3. Use the high-level manager/wrapper methods for most integrations: `createPayment()`, `queryStatus()`, `createMmqr()`, `refund()`, `verifyCallback()`
+4. Use capability helpers like `supportsMmqr()` when your UI or flow depends on provider features
+5. Drop down to `provider()` only when you need direct access to a provider gateway
+6. Handle typed DTO responses instead of raw provider payloads
+
+## Provider Capability Matrix
+
+| Provider | Create Payment | Query Status | Refund | Verify Callback | MMQR |
+| --- | --- | --- | --- | --- | --- |
+| KBZPay | Yes | Yes | Yes | Yes | Yes |
+| AYA Pay | Yes | Yes | Yes | No | Yes |
+| WaveMoney | Yes | No | No | Yes | Yes |
+| 2C2P | Yes | Yes | Yes | Yes | No |
+
+### Provider Selection
+
+`PaymentManager::provider()` and `MyanmarPayments::provider()` accept either a provider string or the `Provider` enum.
+
 ```php
 use Hakhant\Payments\Application\PaymentManager;
-use Hakhant\Payments\Domain\DTO\PaymentRequest;
+use Hakhant\Payments\Domain\Enums\Provider;
 
 public function checkout(PaymentManager $payments)
 {
-    $response = $payments->provider('2c2p')->createPayment(
+    $gateway = $payments->provider(Provider::KBZPAY);
+
+    // String values still work too:
+    // $gateway = $payments->provider('kbzpay');
+}
+```
+
+### Recommended Integration Style
+
+For most applications, prefer the higher-level `PaymentManager` methods instead of resolving a gateway manually.
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Domain\DTO\PaymentRequest;
+use Hakhant\Payments\Domain\Enums\Provider;
+
+public function checkout(PaymentManager $payments)
+{
+    return $payments->createPayment(
+        new PaymentRequest(
+            merchantReference: 'INV-1001',
+            amount: 10000,
+            currency: 'MMK',
+            callbackUrl: 'https://example.com/payments/callback',
+            redirectUrl: 'https://example.com/payments/return',
+        ),
+        Provider::KBZPAY,
+    );
+}
+```
+
+Use capability helpers when you need conditional behavior by provider:
+
+```php
+if ($payments->supportsMmqr(Provider::AYA)) {
+    // Show MMQR option in the UI
+}
+```
+
+```php
+use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Domain\DTO\PaymentRequest;
+use Hakhant\Payments\Domain\Enums\Provider;
+
+public function checkout(PaymentManager $payments)
+{
+    $response = $payments->provider(Provider::TWOC2P)->createPayment(
         new PaymentRequest(
             merchantReference: 'INV-1001',
             amount: 10000,
@@ -111,10 +195,11 @@ public function checkout(PaymentManager $payments)
 
 ```php
 use Hakhant\Payments\Application\PaymentManager;
+use Hakhant\Payments\Domain\Enums\Provider;
 
 public function status(string $transactionId, PaymentManager $payments): array
 {
-    $response = $payments->provider('2c2p')->queryStatus($transactionId);
+    $response = $payments->queryStatus($transactionId, Provider::TWOC2P);
 
     return [
         'transaction_id' => $response->transactionId,
@@ -126,27 +211,23 @@ public function status(string $transactionId, PaymentManager $payments): array
 
 For 2C2P, `transactionId` is the returned payment token because the transaction-status endpoint queries by payment token.
 
-### Refund (Provider Optional Capability)
+### Refund
 
 ```php
 use Hakhant\Payments\Application\PaymentManager;
-use Hakhant\Payments\Contracts\CanRefundPayment;
 use Hakhant\Payments\Domain\DTO\RefundRequest;
-use RuntimeException;
+use Hakhant\Payments\Domain\Enums\Provider;
 
 public function refund(string $transactionId, PaymentManager $payments): array
 {
-    $gateway = $payments->provider('2c2p');
-
-    if (! $gateway instanceof CanRefundPayment) {
-        throw new RuntimeException('Selected provider does not support refunds.');
-    }
-
-    $response = $gateway->refund(new RefundRequest(
+    $response = $payments->refund(new RefundRequest(
         transactionId: $transactionId,
         amount: 10000,
-        reason: 'Customer requested cancellation'
-    ));
+        reason: 'Customer requested cancellation',
+        metadata: [
+            'reference_number' => 'provider-reference-if-required',
+        ],
+    ), Provider::TWOC2P);
 
     return [
         'refund_id' => $response->refundId,
@@ -155,29 +236,22 @@ public function refund(string $transactionId, PaymentManager $payments): array
 }
 ```
 
-### Verify Callback Signature (Provider Optional Capability)
+### Verify Callback Signature
 
 ```php
 use Hakhant\Payments\Application\PaymentManager;
-use Hakhant\Payments\Contracts\CanVerifyCallback;
 use Hakhant\Payments\Domain\DTO\CallbackPayload;
+use Hakhant\Payments\Domain\Enums\Provider;
 use Illuminate\Http\Request;
-use RuntimeException;
 
 public function webhook(Request $request, PaymentManager $payments)
 {
-    $gateway = $payments->provider('2c2p');
-
-    if (! $gateway instanceof CanVerifyCallback) {
-        throw new RuntimeException('Selected provider does not support callback verification.');
-    }
-
     $payload = new CallbackPayload(
         payload: ['payload' => (string) $request->input('payload', '')],
         signature: '',
     );
 
-    $valid = $gateway->verifyCallback($payload);
+    $valid = $payments->verifyCallback($payload, Provider::TWOC2P);
 
     abort_unless($valid, 401, 'Invalid signature');
 
@@ -195,6 +269,8 @@ public function webhook(Request $request, PaymentManager $payments)
 - `refund()` uses the payment-maintenance endpoint with XML wrapped in JWE/JWS using your merchant private key and the 2C2P public key.
 - Refund support requires PEM-formatted `TWOC2P_MERCHANT_PRIVATE_KEY` and `TWOC2P_PUBLIC_KEY` values from the 2C2P key-exchange setup.
 - `TWOC2P_KEY_ID` is optional and can be set when your 2C2P account expects a `kid` header in the signed JWS.
+- Published config now prefers snake_case refund keys such as `notify_url` and `idempotency_id`.
+- Legacy camelCase config keys such as `notifyURL` and `idempotencyID` are still accepted at runtime for backward compatibility.
 - Asynchronous refund completion callbacks and refund-status inquiry are not wrapped yet. The current package support covers refund initiation and mapping the immediate maintenance response.
 
 ### WaveMoney Notes
@@ -205,6 +281,15 @@ public function webhook(Request $request, PaymentManager $payments)
 - Callback verification follows the WaveMoney callback formula and treats null values as the literal string `null`, as required by docs.
 - `queryStatus()` is intentionally unsupported for WaveMoney in this package because the provided docs define callback-driven status updates but no status inquiry endpoint.
 - Treat callback status `PAYMENT_CONFIRMED` as success and verify hash before updating payment state.
+
+### AYA Pay Notes
+
+- `createPayment()` uses AYA push-payment APIs and requires `metadata['customer_phone']`.
+- When `AYA_SERVICE_CODE` or `metadata['service_code']` is set, the gateway uses AYA push payment v2; otherwise it uses the v1 push endpoint.
+- `queryStatus()` calls AYA `checkRequestPayment` with `externalTransactionId`.
+- `createMmqr()` calls AYA `requestQRPayment` and maps `qrdata` to `MmqrResponse::qrCode`.
+- `refund()` requires `RefundRequest` metadata `reference_number` because AYA needs both `externalTransactionId` and `referenceNumber`.
+- AYA callback verification is not implemented yet because the provided swagger does not define a signed webhook/callback contract.
 
 ### Webhook Security Notes
 
@@ -219,26 +304,19 @@ public function webhook(Request $request, PaymentManager $payments)
 ### MMQR Usage
 
 ```php
-use Hakhant\Payments\Application\PaymentManager;
-use Hakhant\Payments\Contracts\CanInitiateMmqr;
+use Hakhant\Payments\Application\UseCases\CreateMmqr;
 use Hakhant\Payments\Domain\DTO\MmqrRequest;
-use RuntimeException;
+use Hakhant\Payments\Domain\Enums\Provider;
 
-public function createMmqr(PaymentManager $payments): array
+public function createMmqr(CreateMmqr $createMmqr): array
 {
-    $gateway = $payments->provider('wavemoney'); // or kbzpay
-
-    if (! $gateway instanceof CanInitiateMmqr) {
-        throw new RuntimeException('Selected provider does not support MMQR.');
-    }
-
-    $response = $gateway->createMmqr(new MmqrRequest(
+    $response = $createMmqr->handle(new MmqrRequest(
         merchantReference: 'MMQR-1001',
         amount: 10000,
         currency: 'MMK',
         notifyUrl: 'https://example.com/payments/mmqr/callback',
         metadata: ['invoice_no' => 'INV-1001'],
-    ));
+    ), Provider::AYA);
 
     return [
         'transaction_id' => $response->transactionId,
@@ -249,22 +327,36 @@ public function createMmqr(PaymentManager $payments): array
 }
 ```
 
+Supported MMQR providers in this package are `KBZPay`, `AYA`, and `WaveMoney`.
+
+Notes by provider:
+- `KBZPay`: sends `kbz.payment.mmqrprecreate` using the same canonical signing helper as the rest of the KBZ gateway, with MMQR-specific `trade_type` and `notify_url` fields.
+- `AYA`: uses the QR payment endpoint and maps returned `qrdata` into `MmqrResponse::qrCode`.
+- `WaveMoney`: uses the same payment creation endpoint as normal checkout and returns the authenticate URL as `qr_code`.
+- `2C2P`: MMQR is not implemented in this package because the current provider integration is focused on hosted checkout, status, refund maintenance, and callback verification.
+
 For WaveMoney, `qr_code` is the Wave authenticate URL (`.../authenticate?transaction_id=...`) returned from payment initialization.
+
+For AYA, `qr_code` is the returned `qrdata` string from `requestQRPayment`.
+
+For KBZPay, `qr_code` is the raw EMVCo/MMQR payload returned by KBZ.
 
 ### Facade Usage
 
 ```php
 use Hakhant\Payments\Domain\DTO\PaymentRequest;
-use Hakhant\Payments\Laravel\Facades\MyanmarPayments;
+use Hakhant\Payments\Domain\Enums\Provider;
+use Hakhant\Payments\Facades\MyanmarPayments;
 
-$response = MyanmarPayments::provider('kbzpay')->createPayment(
+$response = MyanmarPayments::createPayment(
     new PaymentRequest(
         merchantReference: 'INV-2001',
         amount: 25000,
         currency: 'MMK',
         callbackUrl: 'https://example.com/payments/callback',
         redirectUrl: 'https://example.com/payments/return'
-    )
+    ),
+    Provider::KBZPAY,
 );
 ```
 

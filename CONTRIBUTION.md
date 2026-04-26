@@ -52,6 +52,8 @@ Optional capabilities:
 - `CanVerifyCallback`
 - `CanInitiateMmqr` (if provider supports MMQR-like QR payments)
 
+For developer-facing integration ergonomics, consider whether the provider should also work cleanly through an application use case such as `CreateMmqr`.
+
 ### 2. Create Provider Classes
 
 Create a new provider folder under `src/Infrastructure/Providers/<ProviderName>/`.
@@ -97,7 +99,7 @@ Example skeleton:
 
 ### 4. Register in Factory
 
-Update `DefaultGatewayFactory` to build your provider gateway using its config.
+Update `Infrastructure\\Factories\\GatewayFactory` to build your provider gateway using its config, and register it through `GatewayContract`.
 
 Pattern to follow:
 
@@ -115,6 +117,7 @@ Minimum tests required:
 - Gateway create/query/refund behavior
 - Callback verification (valid, invalid, tampered)
 - Factory resolution and unsupported provider paths
+- MMQR behavior if the provider implements `CanInitiateMmqr`
 
 Use `Http::fake()` for HTTP tests. Never call real provider APIs.
 

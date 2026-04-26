@@ -32,31 +32,21 @@ final readonly class TwoC2PGateway implements CanRefundPayment, CanVerifyCallbac
         $payload = [
             'merchantID' => $this->merchantId(),
             'invoiceNo' => $request->merchantReference,
-            'description' => (string) ($request->metadata['description'] ?? $request->metadata['title'] ?? $this->config['payment_description'] ?? 'Payment'),
+            'description' => $this->paymentDescription($request),
             'amount' => (string) $request->amount,
             'currencyCode' => $request->currency,
             'frontendReturnUrl' => $request->redirectUrl,
             'backendReturnUrl' => $request->callbackUrl,
-            'locale' => (string) ($request->metadata['locale'] ?? $this->config['locale'] ?? 'en'),
+            'locale' => $this->locale($request),
         ];
 
-        foreach ([
-            'paymentChannel',
-            'agentChannel',
-            'request3DS',
-            'nonceStr',
-            'paymentExpiry',
-            'userDefined1',
-            'userDefined2',
-            'userDefined3',
-            'userDefined4',
-            'userDefined5',
-            'immediatePayment',
-            'iframeMode',
-            'idempotencyID',
-        ] as $field) {
-            if (array_key_exists($field, $request->metadata)) {
-                $payload[$field] = $request->metadata[$field];
+        foreach ($this->metadataAliases() as $field => $aliases) {
+            foreach ($aliases as $alias) {
+                if (array_key_exists($alias, $request->metadata)) {
+                    $payload[$field] = $request->metadata[$alias];
+
+                    break;
+                }
             }
         }
 
@@ -67,7 +57,7 @@ final readonly class TwoC2PGateway implements CanRefundPayment, CanVerifyCallbac
     {
         $payload = [
             'paymentToken' => $transactionId,
-            'locale' => (string) ($this->config['locale'] ?? 'en'),
+            'locale' => $this->locale(),
             'additionalInfo' => false,
         ];
 
@@ -77,7 +67,7 @@ final readonly class TwoC2PGateway implements CanRefundPayment, CanVerifyCallbac
     public function refund(RefundRequest $request): RefundResponse
     {
         $payload = [
-            'version' => (string) ($this->config['maintenance_version'] ?? '4.3'),
+            'version' => $this->maintenanceVersion(),
             'timeStamp' => date('ymdHis'),
             'merchantID' => $this->merchantId(),
             'processType' => 'R',
@@ -89,19 +79,13 @@ final readonly class TwoC2PGateway implements CanRefundPayment, CanVerifyCallbac
             $payload['userDefined1'] = $request->reason;
         }
 
-        foreach ([
-            'notifyURL',
-            'idempotencyID',
-            'bankCode',
-            'accountName',
-            'accountNumber',
-            'userDefined2',
-            'userDefined3',
-            'userDefined4',
-            'userDefined5',
-        ] as $field) {
-            if (array_key_exists($field, $this->config)) {
-                $payload[$field] = $this->config[$field];
+        foreach ($this->refundConfigAliases() as $field => $aliases) {
+            foreach ($aliases as $alias) {
+                if (array_key_exists($alias, $this->config)) {
+                    $payload[$field] = $this->config[$alias];
+
+                    break;
+                }
             }
         }
 
@@ -144,5 +128,63 @@ final readonly class TwoC2PGateway implements CanRefundPayment, CanVerifyCallbac
     private function secretKey(): string
     {
         return (string) ($this->config['secret_key'] ?? '');
+    }
+
+    private function paymentDescription(PaymentRequest $request): string
+    {
+        return (string) ($request->metadata['description']
+            ?? $request->metadata['title']
+            ?? $this->config['payment_description']
+            ?? 'Payment');
+    }
+
+    private function locale(?PaymentRequest $request = null): string
+    {
+        return (string) ($request?->metadata['locale'] ?? $this->config['locale'] ?? 'en');
+    }
+
+    private function maintenanceVersion(): string
+    {
+        return (string) ($this->config['maintenance_version'] ?? '4.3');
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function metadataAliases(): array
+    {
+        return [
+            'paymentChannel' => ['paymentChannel', 'payment_channel'],
+            'agentChannel' => ['agentChannel', 'agent_channel'],
+            'request3DS' => ['request3DS', 'request_3ds'],
+            'nonceStr' => ['nonceStr', 'nonce_str'],
+            'paymentExpiry' => ['paymentExpiry', 'payment_expiry'],
+            'userDefined1' => ['userDefined1', 'user_defined_1'],
+            'userDefined2' => ['userDefined2', 'user_defined_2'],
+            'userDefined3' => ['userDefined3', 'user_defined_3'],
+            'userDefined4' => ['userDefined4', 'user_defined_4'],
+            'userDefined5' => ['userDefined5', 'user_defined_5'],
+            'immediatePayment' => ['immediatePayment', 'immediate_payment'],
+            'iframeMode' => ['iframeMode', 'iframe_mode'],
+            'idempotencyID' => ['idempotencyID', 'idempotency_id'],
+        ];
+    }
+
+    /**
+     * @return array<string, list<string>>
+     */
+    private function refundConfigAliases(): array
+    {
+        return [
+            'notifyURL' => ['notifyURL', 'notify_url'],
+            'idempotencyID' => ['idempotencyID', 'idempotency_id'],
+            'bankCode' => ['bankCode', 'bank_code'],
+            'accountName' => ['accountName', 'account_name'],
+            'accountNumber' => ['accountNumber', 'account_number'],
+            'userDefined2' => ['userDefined2', 'user_defined_2'],
+            'userDefined3' => ['userDefined3', 'user_defined_3'],
+            'userDefined4' => ['userDefined4', 'user_defined_4'],
+            'userDefined5' => ['userDefined5', 'user_defined_5'],
+        ];
     }
 }

@@ -269,6 +269,117 @@ describe('TwoC2PGateway::refund()', function (): void {
                 && str_contains($xml, '<userDefined5>five</userDefined5>');
         });
     });
+
+    it('accepts snake_case aliases for payment metadata and refund config', function (): void {
+        $jwt = new TwoC2PJwt;
+        $keyJwt = new TwoC2PKeyJwt;
+        $keys = twoC2pGatewayKeyFixture();
+
+        Http::fake([
+            'https://sandbox.test/paymentToken' => Http::response([
+                'payload' => $jwt->encode([
+                    'webPaymentUrl' => 'https://sandbox-ui.test/token/alias',
+                    'paymentToken' => 'TOKEN_ALIAS',
+                    'respCode' => '0000',
+                    'respDesc' => 'Success',
+                ], '0123456789abcdef0123456789abcdef'),
+            ], 200),
+            'https://sandbox.test/refund' => Http::response(
+                $keyJwt->encode(
+                    '<PaymentProcessResponse><version>4.3</version><timeStamp>250424120000</timeStamp><respCode>42</respCode><respDesc>Pending</respDesc><processType>R</processType><invoiceNo>INV-ALIAS</invoiceNo><amount>1000.00</amount><status>RP</status><referenceNo>REF-ALIAS</referenceNo></PaymentProcessResponse>',
+                    $keys['two_c2p_private_key'],
+                    $keys['merchant_public_key'],
+                ),
+                200,
+                ['Content-Type' => 'text/plain'],
+            ),
+        ]);
+
+        [$gateway] = buildTwoC2pGateway([
+            'notify_url' => 'https://merchant.test/refund-alias',
+            'idempotency_id' => 'refund-idem-alias',
+            'bank_code' => 'BANK2',
+            'account_name' => 'Alias Customer',
+            'account_number' => '999000111',
+            'user_defined_2' => 'alias-two',
+            'user_defined_3' => 'alias-three',
+            'user_defined_4' => 'alias-four',
+            'user_defined_5' => 'alias-five',
+        ]);
+
+        $gateway->createPayment(new PaymentRequest(
+            merchantReference: 'INV-ALIAS',
+            amount: 1000,
+            currency: 'MMK',
+            callbackUrl: 'https://merchant.test/callback',
+            redirectUrl: 'https://merchant.test/return',
+            metadata: [
+                'payment_channel' => ['WEBPAY'],
+                'agent_channel' => ['CHANNEL'],
+                'request_3ds' => 'Y',
+                'nonce_str' => 'snake-nonce',
+                'payment_expiry' => '2026-12-31 23:59:59',
+                'user_defined_1' => 'alias-one',
+                'user_defined_2' => 'alias-two',
+                'user_defined_3' => 'alias-three',
+                'user_defined_4' => 'alias-four',
+                'user_defined_5' => 'alias-five',
+                'immediate_payment' => true,
+                'iframe_mode' => false,
+                'idempotency_id' => 'idem-alias',
+            ],
+        ));
+
+        $gateway->refund(new RefundRequest(
+            transactionId: 'INV-ALIAS',
+            amount: 1000,
+        ));
+
+        Http::assertSent(function (Request $request) use ($keyJwt, $keys): bool {
+            if ($request->url() !== 'https://sandbox.test/paymentToken') {
+                return false;
+            }
+
+            $token = ($request->data())['payload'] ?? null;
+            if (! is_string($token)) {
+                return false;
+            }
+
+            $payload = (new TwoC2PJwt)->decode($token, '0123456789abcdef0123456789abcdef');
+
+            return ($payload['paymentChannel'] ?? null) === ['WEBPAY']
+                && ($payload['agentChannel'] ?? null) === ['CHANNEL']
+                && ($payload['request3DS'] ?? null) === 'Y'
+                && ($payload['nonceStr'] ?? null) === 'snake-nonce'
+                && ($payload['paymentExpiry'] ?? null) === '2026-12-31 23:59:59'
+                && ($payload['userDefined1'] ?? null) === 'alias-one'
+                && ($payload['userDefined2'] ?? null) === 'alias-two'
+                && ($payload['userDefined3'] ?? null) === 'alias-three'
+                && ($payload['userDefined4'] ?? null) === 'alias-four'
+                && ($payload['userDefined5'] ?? null) === 'alias-five'
+                && ($payload['immediatePayment'] ?? null) === true
+                && ($payload['iframeMode'] ?? null) === false
+                && ($payload['idempotencyID'] ?? null) === 'idem-alias';
+        });
+
+        Http::assertSent(function (Request $request) use ($keyJwt, $keys): bool {
+            if ($request->url() !== 'https://sandbox.test/refund') {
+                return false;
+            }
+
+            $xml = $keyJwt->decode($request->body(), $keys['merchant_public_key'], $keys['two_c2p_private_key']);
+
+            return str_contains($xml, '<notifyURL>https://merchant.test/refund-alias</notifyURL>')
+                && str_contains($xml, '<idempotencyID>refund-idem-alias</idempotencyID>')
+                && str_contains($xml, '<bankCode>BANK2</bankCode>')
+                && str_contains($xml, '<accountName>Alias Customer</accountName>')
+                && str_contains($xml, '<accountNumber>999000111</accountNumber>')
+                && str_contains($xml, '<userDefined2>alias-two</userDefined2>')
+                && str_contains($xml, '<userDefined3>alias-three</userDefined3>')
+                && str_contains($xml, '<userDefined4>alias-four</userDefined4>')
+                && str_contains($xml, '<userDefined5>alias-five</userDefined5>');
+        });
+    });
 });
 
 describe('TwoC2PGateway::queryStatus()', function (): void {

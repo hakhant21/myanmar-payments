@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Hakhant\Payments\Infrastructure\Factories;
 
-use Hakhant\Payments\Contracts\GatewayFactory;
+use Hakhant\Payments\Contracts\GatewayContract;
 use Hakhant\Payments\Contracts\PaymentGateway;
+use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
+use Hakhant\Payments\Infrastructure\Providers\AYA\AYAClient;
+use Hakhant\Payments\Infrastructure\Providers\AYA\AYAGateway;
+use Hakhant\Payments\Infrastructure\Providers\AYA\AYAMapper;
 use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayClient;
 use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayGateway;
 use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayMapper;
@@ -22,7 +26,7 @@ use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyGateway;
 use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyHash;
 use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyMapper;
 
-final readonly class DefaultGatewayFactory implements GatewayFactory
+final readonly class GatewayFactory implements GatewayContract
 {
     /**
      * @param  array<string, mixed>  $config
@@ -30,30 +34,44 @@ final readonly class DefaultGatewayFactory implements GatewayFactory
     public function __construct(
         private HttpClient $httpClient,
         private array $config,
+        private ?TwoC2PMapper $twoC2PMapper = null,
+        private ?TwoC2PJwt $twoC2PJwt = null,
+        private ?TwoC2PKeyJwt $twoC2PKeyJwt = null,
+        private ?AYAMapper $ayaMapper = null,
+        private ?KBZPayMapper $kbzPayMapper = null,
+        private ?KBZPaySignature $kbzPaySignature = null,
+        private ?WaveMoneyMapper $waveMoneyMapper = null,
+        private ?WaveMoneyHash $waveMoneyHash = null,
     ) {}
 
-    public function make(string $provider): PaymentGateway
+    public function make(Provider|string $provider): PaymentGateway
     {
+        $provider = $this->normalizeProvider($provider);
         $providerConfig = $this->providerConfig($provider);
 
         return match ($provider) {
             '2c2p' => new TwoC2PGateway(
                 new TwoC2PClient($this->httpClient, $providerConfig),
-                new TwoC2PMapper,
-                new TwoC2PJwt,
-                new TwoC2PKeyJwt,
+                $this->twoC2PMapper ?? new TwoC2PMapper,
+                $this->twoC2PJwt ?? new TwoC2PJwt,
+                $this->twoC2PKeyJwt ?? new TwoC2PKeyJwt,
+                $providerConfig,
+            ),
+            'aya' => new AYAGateway(
+                new AYAClient($this->httpClient, $providerConfig),
+                $this->ayaMapper ?? new AYAMapper,
                 $providerConfig,
             ),
             'kbzpay' => new KBZPayGateway(
                 new KBZPayClient($this->httpClient, $providerConfig),
-                new KBZPayMapper,
-                new KBZPaySignature,
+                $this->kbzPayMapper ?? new KBZPayMapper,
+                $this->kbzPaySignature ?? new KBZPaySignature,
                 $providerConfig,
             ),
             'wavemoney' => new WaveMoneyGateway(
                 new WaveMoneyClient($this->httpClient, $providerConfig),
-                new WaveMoneyMapper,
-                new WaveMoneyHash,
+                $this->waveMoneyMapper ?? new WaveMoneyMapper,
+                $this->waveMoneyHash ?? new WaveMoneyHash,
                 $providerConfig,
             ),
             default => throw new ProviderException(sprintf('Unsupported provider: %s', $provider)),
@@ -78,5 +96,10 @@ final readonly class DefaultGatewayFactory implements GatewayFactory
         }
 
         return $config;
+    }
+
+    private function normalizeProvider(Provider|string $provider): string
+    {
+        return Provider::normalize($provider);
     }
 }

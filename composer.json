@@ -39,10 +39,10 @@
   "extra": {
     "laravel": {
       "providers": [
-        "Hakhant\\Payments\\Laravel\\MyanmarPaymentsServiceProvider"
+        "Hakhant\\Payments\\Providers\\MyanmarPaymentsServiceProvider"
       ],
       "aliases": {
-        "MyanmarPayments": "Hakhant\\Payments\\Laravel\\Facades\\MyanmarPayments"
+        "MyanmarPayments": "Hakhant\\Payments\\Facades\\MyanmarPayments"
       }
     }
   },
