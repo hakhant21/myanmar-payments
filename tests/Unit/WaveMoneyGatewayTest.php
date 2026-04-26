@@ -7,11 +7,11 @@ use Hakhant\Payments\Domain\DTO\MmqrRequest;
 use Hakhant\Payments\Domain\DTO\PaymentRequest;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
-use Hakhant\Payments\Infrastructure\Http\HttpClient;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyClient;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
+use Hakhant\Payments\Infrastructure\Http\HttpClient;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

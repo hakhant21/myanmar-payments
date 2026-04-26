@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Hakhant\Payments\Application\UseCases;
 
 use Hakhant\Payments\Application\PaymentManager;
-use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\DTO\PaymentResponse;
+use Hakhant\Payments\Domain\Enums\Provider;
 
 final readonly class QueryPaymentStatus
 {

@@ -7,11 +7,11 @@ use Hakhant\Payments\Contracts\PaymentGateway;
 use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Factories\GatewayFactory;
-use Hakhant\Payments\Infrastructure\Http\HttpClient;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAGateway;
 use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayGateway;
 use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PGateway;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
+use Hakhant\Payments\Infrastructure\Http\HttpClient;
 use Hakhant\Payments\Tests\Support\ProviderConfig;
 
 /**

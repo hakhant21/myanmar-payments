@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Hakhant\Payments\Application\PaymentManager;
 use Hakhant\Payments\Contracts\GatewayContract;
+use Hakhant\Payments\Facades\MyanmarPayments;
 use Hakhant\Payments\Infrastructure\Factories\GatewayFactory;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAGateway;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAMapper;
@@ -17,7 +18,6 @@ use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PMapper;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
-use Hakhant\Payments\Facades\MyanmarPayments;
 use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
 use Hakhant\Payments\Support\Logging\PaymentLogger;
 use Hakhant\Payments\Tests\Support\ProviderConfig;

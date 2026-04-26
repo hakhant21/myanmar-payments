@@ -8,7 +8,6 @@ use Hakhant\Payments\Contracts\GatewayContract;
 use Hakhant\Payments\Contracts\PaymentGateway;
 use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
-use Hakhant\Payments\Infrastructure\Http\HttpClient;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAClient;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAGateway;
 use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAMapper;
@@ -25,6 +24,7 @@ use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyClient;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
+use Hakhant\Payments\Infrastructure\Http\HttpClient;
 
 final readonly class GatewayFactory implements GatewayContract
 {
