@@ -1,5 +1,8 @@
 name: Analysis
 
+permissions:
+    contents: read
+
 on:
     push:
         branches:
@@ -17,7 +20,7 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -27,7 +30,7 @@ jobs:
                   tools: composer:v2
 
             - name: Cache Composer dependencies
-              uses: actions/cache@v4
+              uses: actions/cache@v5
               with:
                   path: ~/.composer/cache/files
                   key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
