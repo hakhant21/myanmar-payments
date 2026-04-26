@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PKeyJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PKeyJwt;
 
 function twoC2pB64UrlEncode(string $value): string
 {

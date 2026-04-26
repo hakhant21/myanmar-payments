@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayClient;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPaySignature;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayClient;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPaySignature;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

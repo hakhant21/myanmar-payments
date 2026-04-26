@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PJwt;
 
 describe('TwoC2PJwt', function (): void {
     it('encodes and decodes HS256 payloads', function (): void {

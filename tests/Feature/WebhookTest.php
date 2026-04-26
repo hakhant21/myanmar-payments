@@ -7,10 +7,10 @@ use Hakhant\Payments\Domain\DTO\PaymentRequest;
 use Hakhant\Payments\Domain\DTO\RefundRequest;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayClient;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayGateway;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayMapper;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPaySignature;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayClient;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayGateway;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayMapper;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPaySignature;
 use Illuminate\Support\Facades\Http;
 
 function makeWebhookGateway(): array

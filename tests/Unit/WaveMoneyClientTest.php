@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyClient;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyClient;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

@@ -11,9 +11,9 @@ use Hakhant\Payments\Domain\DTO\RefundResponse;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAClient;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAGateway;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAMapper;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAClient;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAGateway;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAMapper;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hakhant\Payments\Infrastructure\Providers\AYA;
+namespace Hakhant\Payments\Infrastructure\Gateways\AYA;
 
 use Hakhant\Payments\Contracts\CanInitiateMmqr;
 use Hakhant\Payments\Contracts\CanRefundPayment;

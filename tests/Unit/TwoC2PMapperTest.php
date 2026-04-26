@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PMapper;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PMapper;
 
 beforeEach(function (): void {
     $this->mapper = new TwoC2PMapper;

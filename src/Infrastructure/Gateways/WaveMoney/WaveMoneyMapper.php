@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hakhant\Payments\Infrastructure\Providers\WaveMoney;
+namespace Hakhant\Payments\Infrastructure\Gateways\WaveMoney;
 
 use Hakhant\Payments\Domain\DTO\MmqrResponse;
 use Hakhant\Payments\Domain\DTO\PaymentResponse;

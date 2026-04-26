@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyMapper;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
 
 beforeEach(function (): void {
     $this->mapper = new WaveMoneyMapper;

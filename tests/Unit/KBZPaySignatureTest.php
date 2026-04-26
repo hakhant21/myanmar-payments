@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPaySignature;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPaySignature;
 
 beforeEach(function (): void {
     $this->signature = new KBZPaySignature;

@@ -8,11 +8,11 @@ use Hakhant\Payments\Domain\DTO\PaymentResponse;
 use Hakhant\Payments\Domain\DTO\RefundRequest;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PClient;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PGateway;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PJwt;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PKeyJwt;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PMapper;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PClient;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PGateway;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PKeyJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PMapper;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 

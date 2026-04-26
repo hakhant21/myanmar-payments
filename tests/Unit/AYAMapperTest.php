@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAMapper;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAMapper;
 
 describe('AYAMapper', function (): void {
     it('maps pending-like statuses', function (): void {

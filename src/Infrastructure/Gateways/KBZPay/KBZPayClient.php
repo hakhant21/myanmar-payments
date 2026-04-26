@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hakhant\Payments\Infrastructure\Providers\KBZPay;
+namespace Hakhant\Payments\Infrastructure\Gateways\KBZPay;
 
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
 

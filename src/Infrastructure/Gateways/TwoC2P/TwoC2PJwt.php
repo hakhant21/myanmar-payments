@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hakhant\Payments\Infrastructure\Providers\TwoC2P;
+namespace Hakhant\Payments\Infrastructure\Gateways\TwoC2P;
 
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;

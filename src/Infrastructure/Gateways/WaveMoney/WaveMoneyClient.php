@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Hakhant\Payments\Infrastructure\Providers\WaveMoney;
+namespace Hakhant\Payments\Infrastructure\Gateways\WaveMoney;
 
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;

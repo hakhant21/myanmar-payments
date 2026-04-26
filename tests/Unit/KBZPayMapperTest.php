@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayMapper;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayMapper;
 
 beforeEach(function (): void {
     $this->mapper = new KBZPayMapper;

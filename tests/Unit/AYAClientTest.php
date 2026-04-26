@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAClient;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAClient;
 use Illuminate\Support\Facades\Http;
 
 /**

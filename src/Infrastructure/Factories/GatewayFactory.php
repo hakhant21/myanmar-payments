@@ -9,22 +9,22 @@ use Hakhant\Payments\Contracts\PaymentGateway;
 use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Infrastructure\Http\HttpClient;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAClient;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAGateway;
-use Hakhant\Payments\Infrastructure\Providers\AYA\AYAMapper;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayClient;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayGateway;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPayMapper;
-use Hakhant\Payments\Infrastructure\Providers\KBZPay\KBZPaySignature;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PClient;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PGateway;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PJwt;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PKeyJwt;
-use Hakhant\Payments\Infrastructure\Providers\TwoC2P\TwoC2PMapper;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyClient;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyGateway;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyHash;
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyMapper;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAClient;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAGateway;
+use Hakhant\Payments\Infrastructure\Gateways\AYA\AYAMapper;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayClient;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayGateway;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPayMapper;
+use Hakhant\Payments\Infrastructure\Gateways\KBZPay\KBZPaySignature;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PClient;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PGateway;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PKeyJwt;
+use Hakhant\Payments\Infrastructure\Gateways\TwoC2P\TwoC2PMapper;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyClient;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
 
 final readonly class GatewayFactory implements GatewayContract
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Hakhant\Payments\Infrastructure\Providers\WaveMoney\WaveMoneyHash;
+use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
 
 describe('WaveMoneyHash', function (): void {
     it('generates hmac sha256 hashes for payload parts', function (): void {

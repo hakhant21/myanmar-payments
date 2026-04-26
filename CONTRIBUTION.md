@@ -56,7 +56,7 @@ For developer-facing integration ergonomics, consider whether the provider shoul
 
 ### 2. Create Provider Classes
 
-Create a new provider folder under `src/Infrastructure/Providers/<ProviderName>/`.
+Create a new provider folder under `src/Infrastructure/Gateways/<ProviderName>/`.
 
 Recommended classes:
 
