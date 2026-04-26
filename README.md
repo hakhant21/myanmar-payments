@@ -3,8 +3,9 @@
 Laravel package for Myanmar payment providers with a single gateway-selection flow across KBZPay, AYA Pay, 2C2P, and WaveMoney. The package is organized around provider adapters, typed request/response DTOs, optional capability contracts for refunds, callbacks, and MMQR, plus Laravel container and facade integration.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
-[![PHPStan Analyse](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
-[![Packagist Downloads](https://img.shields.io/packagist/dt/hakhant/myanmar-payments)](https://packagist.org/packages/hakhant/myanmar-payments)
+[![Static Analysis](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
+[![Release](https://github.com/hakhant21/myanmar-payments/actions/workflows/release.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/release.yml)
+[![Downloads](https://img.shields.io/packagist/dt/hakhant/myanmar-payments)](https://packagist.org/packages/hakhant/myanmar-payments)
 [![License](https://img.shields.io/github/license/hakhant21/myanmar-payments.svg)](LICENSE.md)
 
 ## Features
