@@ -1,13 +1,19 @@
 {
   "name": "hakhant/myanmar-payments",
-  "description": "Production-ready Laravel payment package for Myanmar gateways.",
+  "description": "Laravel Myanmar payment gateway package for KBZPay, WaveMoney, 2C2P, AYA Pay, and MMQR.",
   "type": "library",
   "license": "MIT",
   "keywords": [
     "laravel",
     "payments",
     "myanmar",
+    "myanmar-payments",
+    "payment-gateway",
     "kbzpay",
+    "wavemoney",
+    "wavepay",
+    "2c2p",
+    "ayapay",
     "mmqr"
   ],
   "require": {

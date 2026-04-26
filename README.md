@@ -1,6 +1,6 @@
-# Myanmar Payments
+# Myanmar Payments for Laravel
 
-Laravel package for Myanmar payment providers with a single gateway-selection flow across KBZPay, AYA Pay, 2C2P, and WaveMoney. The package is organized around provider adapters, typed request/response DTOs, optional capability contracts for refunds, callbacks, and MMQR, plus Laravel container and facade integration.
+Laravel Myanmar payment gateway package for KBZPay, WaveMoney (Wave Pay), 2C2P, and AYA Pay with MMQR support. It provides a single gateway-selection flow, typed request and response DTOs, refunds, callbacks, and Laravel container integration.
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![Static Analysis](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
@@ -8,8 +8,23 @@ Laravel package for Myanmar payment providers with a single gateway-selection fl
 [![Downloads](https://img.shields.io/packagist/dt/hakhant/myanmar-payments)](https://packagist.org/packages/hakhant/myanmar-payments)
 [![License](https://img.shields.io/github/license/hakhant21/myanmar-payments.svg)](LICENSE.md)
 
+## Supported Providers
+
+Myanmar payment gateway support for Laravel:
+
+- KBZPay
+- WaveMoney (Wave Pay)
+- 2C2P
+- AYA Pay
+- MMQR support for supported providers
+
+Common search terms: Myanmar payments, Myanmar payment gateway, KBZPay Laravel, Wave Pay Laravel, WaveMoney payment gateway, 2C2P Laravel, MMQR Laravel.
+
 ## Features
 
+- Built for Myanmar payment integrations in Laravel apps
+- Supports KBZPay, WaveMoney (Wave Pay), 2C2P, and AYA Pay
+- Supports MMQR flows for supported providers
 - Strict typing with `declare(strict_types=1);`
 - PSR-4 autoloading
 - Provider-driven architecture with `PaymentManager`, `GatewayContract`, and provider-specific gateway adapters
