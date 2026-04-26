@@ -74,7 +74,7 @@ final readonly class KBZPayClient
     public function mmqrPrecreate(array $bizContent, KBZPaySignature $signature): array
     {
         $request = $this->makeRequest(
-            method: 'kbz.payment.mmqrprecreate',
+            method: 'kbz.payment.precreate',
             version: (string) ($this->config['versions']['mmqr'] ?? '1.0'),
             bizContent: $bizContent,
             signature: $signature,
@@ -172,7 +172,7 @@ final readonly class KBZPayClient
 
     private function mmqrUrl(): string
     {
-        return (string) ($this->config['endpoints']['mmqr'] ?? 'https://api.kbzpay.com/payment/gateway/mmqrprecreate');
+        return (string) ($this->config['endpoints']['mmqr'] ?? $this->precreateUrl());
     }
 
     private function nonce(): string

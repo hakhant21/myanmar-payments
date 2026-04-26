@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Http;
 describe('MMQR feature', function (): void {
     it('creates MMQR with KBZ and returns qr_code', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'result' => 'SUCCESS',
                     'code' => '0',
@@ -57,7 +57,7 @@ describe('MMQR feature', function (): void {
 
     it('maps PAY_SUCCESS MMQR response to SUCCESS', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'result' => 'SUCCESS',
                     'merch_order_id' => 'MMQR_ORDER_002',
@@ -87,7 +87,7 @@ describe('MMQR feature', function (): void {
 
     it('maps unknown MMQR status to UNKNOWN', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'result' => 'SUCCESS',
                     'merch_order_id' => 'MMQR_ORDER_003',

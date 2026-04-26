@@ -28,7 +28,7 @@ function makeWebhookGateway(): array
             'precreate' => 'https://api.test/precreate',
             'queryorder' => 'https://api.test/queryorder',
             'refund' => 'https://api.test/refund',
-            'mmqr' => 'https://api.test/mmqr',
+            'mmqr' => 'https://api.test/precreate',
         ],
         'versions' => ['precreate' => '1.0', 'queryorder' => '3.0', 'refund' => '1.0', 'mmqr' => '1.0'],
         'timeout' => 10,

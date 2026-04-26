@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Http;
 describe('MMQR payment flow', function (): void {
     it('creates MMQR payment and receives QR code from KBZ API', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'result' => 'SUCCESS',
                     'code' => '0',
@@ -56,7 +56,7 @@ describe('MMQR payment flow', function (): void {
 
     it('creates MMQR payment with QR image included', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'result' => 'SUCCESS',
                     'merch_order_id' => 'MMQR_IMG_001',
@@ -172,7 +172,7 @@ describe('MMQR payment flow', function (): void {
         $capturedPayload = null;
 
         Http::fake([
-            'https://api.test/mmqr' => function (Request $request) use (&$capturedPayload) {
+            'https://api.test/precreate' => function (Request $request) use (&$capturedPayload) {
                 $capturedPayload = $request->data();
 
                 return Http::response([
@@ -203,9 +203,9 @@ describe('MMQR payment flow', function (): void {
         ));
 
         expect($capturedPayload)->not->toBeNull()
-            ->and($capturedPayload['Request']['biz_content']['trade_type'])->toBe('MMQR')
+            ->and($capturedPayload['Request']['biz_content']['trade_type'])->toBe('PAY_BY_QRCODE')
             ->and($capturedPayload['Request']['biz_content']['total_amount'])->toBe('7500')
             ->and($capturedPayload['Request']['biz_content']['trans_currency'])->toBe('MMK')
-            ->and($capturedPayload['Request']['method'])->toBe('kbz.payment.mmqrprecreate');
+            ->and($capturedPayload['Request']['method'])->toBe('kbz.payment.precreate');
     });
 });

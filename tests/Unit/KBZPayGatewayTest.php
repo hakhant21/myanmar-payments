@@ -33,7 +33,7 @@ function gatewayConfig(array $overrides = []): array
             'precreate' => 'https://api.test/precreate',
             'queryorder' => 'https://api.test/queryorder',
             'refund' => 'https://api.test/refund',
-            'mmqr' => 'https://api.test/mmqr',
+            'mmqr' => 'https://api.test/precreate',
         ],
         'versions' => [
             'precreate' => '1.0',
@@ -251,7 +251,7 @@ describe('KBZPayGateway::verifyCallback()', function (): void {
 describe('KBZPayGateway::createMmqr()', function (): void {
     it('creates MMQR payment and returns MmqrResponse', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response([
+            'https://api.test/precreate' => Http::response([
                 'Response' => [
                     'merch_order_id' => 'MMQR001',
                     'trade_status' => 'WAIT_PAY',
@@ -278,7 +278,7 @@ describe('KBZPayGateway::createMmqr()', function (): void {
         Http::assertSent(function (Request $request): bool {
             $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
 
-            return ($biz['trade_type'] ?? null) === 'MMQR'
+            return ($biz['trade_type'] ?? null) === 'PAY_BY_QRCODE'
                 && ($biz['notify_url'] ?? null) === 'https://example.test/notify';
         });
     });

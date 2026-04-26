@@ -108,13 +108,13 @@ KBZPAY_TRADE_TYPE=APP
 KBZPAY_PRECREATE_URL=https://api.kbzpay.com/payment/gateway/precreate
 KBZPAY_QUERYORDER_URL=https://api.kbzpay.com/payment/gateway/queryorder
 KBZPAY_REFUND_URL=https://api.kbzpay.com:8008/payment/gateway/refund
-KBZPAY_MMQR_URL=https://api.kbzpay.com/payment/gateway/mmqrprecreate
+KBZPAY_MMQR_URL=https://api.kbzpay.com/payment/gateway/precreate
 
 # UAT examples from KBZ docs:
 # KBZPAY_PRECREATE_URL=http://api-uat.kbzpay.com/payment/gateway/uat/precreate
 # KBZPAY_QUERYORDER_URL=http://api-uat.kbzpay.com/payment/gateway/uat/queryorder
 # KBZPAY_REFUND_URL=https://api-uat.kbzpay.com:18008/payment/gateway/uat/refund
-# KBZPAY_MMQR_URL=http://api-uat.kbzpay.com/payment/gateway/uat/mmqrprecreate
+# KBZPAY_MMQR_URL=http://api-uat.kbzpay.com/payment/gateway/uat/precreate
 ```
 
 ## Usage
@@ -363,7 +363,7 @@ Supported MMQR providers in this package are `KBZPay`, `AYA`, and `WaveMoney`.
 
 Notes by provider:
 
-- `KBZPay`: sends `kbz.payment.mmqrprecreate` using the same canonical signing helper as the rest of the KBZ gateway, with MMQR-specific `trade_type` and `notify_url` fields.
+- `KBZPay`: uses the standard `kbz.payment.precreate` endpoint for MMQR with `trade_type=PAY_BY_QRCODE`; KBZ returns MMQR QR data for MMQR-enabled merchants.
 - `AYA`: uses the QR payment endpoint and maps returned `qrdata` into `MmqrResponse::qrCode`.
 - `WaveMoney`: uses the same payment creation endpoint as normal checkout and returns the authenticate URL as `qr_code`.
 - `2C2P`: MMQR is not implemented in this package because the current provider integration is focused on hosted checkout, status, refund maintenance, and callback verification.

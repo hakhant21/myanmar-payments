@@ -19,7 +19,7 @@ function unitClient(array $config = []): KBZPayClient
             'precreate' => 'https://api.test/precreate',
             'queryorder' => 'https://api.test/queryorder',
             'refund' => 'https://api.test/refund',
-            'mmqr' => 'https://api.test/mmqr',
+            'mmqr' => 'https://api.test/precreate',
         ],
         'versions' => [
             'precreate' => '1.0',
@@ -123,19 +123,19 @@ describe('KBZPayClient::refund()', function (): void {
 });
 
 describe('KBZPayClient::mmqrPrecreate()', function (): void {
-    it('sends POST to mmqr URL with MMQR method and notify_url', function (): void {
+    it('uses precreate endpoint and method for MMQR requests', function (): void {
         Http::fake([
-            'https://api.test/mmqr' => Http::response(['Response' => ['result' => 'SUCCESS']], 200),
+            'https://api.test/precreate' => Http::response(['Response' => ['result' => 'SUCCESS']], 200),
         ]);
 
         $client = unitClient();
-        $client->mmqrPrecreate(['appid' => 'APP', 'trade_type' => 'MMQR', 'total_amount' => '2000'], $this->signature);
+        $client->mmqrPrecreate(['appid' => 'APP', 'trade_type' => 'PAY_BY_QRCODE', 'total_amount' => '2000'], $this->signature);
 
         Http::assertSent(function (Request $request): bool {
             $payload = ($request->data())['Request'] ?? [];
 
-            return $request->url() === 'https://api.test/mmqr'
-                && ($payload['method'] ?? null) === 'kbz.payment.mmqrprecreate'
+            return $request->url() === 'https://api.test/precreate'
+                && ($payload['method'] ?? null) === 'kbz.payment.precreate'
                 && isset($payload['notify_url']);
         });
     });

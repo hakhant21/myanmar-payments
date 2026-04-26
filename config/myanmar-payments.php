@@ -67,7 +67,7 @@ return [
                 'precreate' => env('KBZPAY_PRECREATE_URL', 'https://api.kbzpay.com/payment/gateway/precreate'),
                 'queryorder' => env('KBZPAY_QUERYORDER_URL', 'https://api.kbzpay.com/payment/gateway/queryorder'),
                 'refund' => env('KBZPAY_REFUND_URL', 'https://api.kbzpay.com:8008/payment/gateway/refund'),
-                'mmqr' => env('KBZPAY_MMQR_URL', 'https://api.kbzpay.com/payment/gateway/mmqrprecreate'),
+                'mmqr' => env('KBZPAY_MMQR_URL', 'https://api.kbzpay.com/payment/gateway/precreate'),
             ],
             'versions' => [
                 'precreate' => env('KBZPAY_PRECREATE_VERSION', '1.0'),

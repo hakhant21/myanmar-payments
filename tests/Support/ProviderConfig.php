@@ -50,7 +50,7 @@ final class ProviderConfig
                 'precreate' => 'https://api.test/precreate',
                 'queryorder' => 'https://api.test/queryorder',
                 'refund' => 'https://api.test/refund',
-                'mmqr' => 'https://api.test/mmqr',
+                'mmqr' => 'https://api.test/precreate',
             ],
             'versions' => [
                 'precreate' => '1.0',
