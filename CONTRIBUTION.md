@@ -179,7 +179,7 @@ Minimum expected coverage for provider work usually includes:
 GitHub Actions currently run:
 
 - `.github/workflows/tests.yml`: `composer test`
-- `.github/workflows/analyse.yml`: `composer analyse`
+- `.github/workflows/analysis.yml`: `composer analyse`
 
 Before opening a pull request:
 
