@@ -134,19 +134,19 @@ fi
 # Save any local changes before release so the tag is created from committed work
 if [ -n "$(git status --porcelain)" ]; then
     DEFAULT_SAVE_COMMIT_MSG="chore: prepare release ${CURRENT_VERSION}"
-    SAVE_COMMIT_MSG=$(prompt_or_fail_for_message "$SAVE_COMMIT_MSG_INPUT" "Enter pre-release commit message" "$DEFAULT_SAVE_COMMIT_MSG" true)
+    SAVE_COMMIT_MSG=$(prompt_or_fail_for_message "$SAVE_COMMIT_MSG_INPUT" "Enter save commit message before release" "$DEFAULT_SAVE_COMMIT_MSG" true)
 
-    echo -e "${YELLOW}Pre-release commit message:${NC} ${SAVE_COMMIT_MSG}\n"
+    echo -e "${YELLOW}Save commit message before release:${NC} ${SAVE_COMMIT_MSG}\n"
     echo -e "${BLUE}Staging all tracked and untracked changes...${NC}"
     git add -A
 
-    echo -e "${BLUE}Creating pre-release commit...${NC}"
+    echo -e "${BLUE}Creating save commit before release...${NC}"
     git commit -m "$SAVE_COMMIT_MSG"
 
-    echo -e "${BLUE}Pushing pre-release commit to GitHub...${NC}"
+    echo -e "${BLUE}Pushing save commit to GitHub...${NC}"
     git push origin main
 
-    echo -e "\n${BLUE}Git state after pre-release push:${NC}"
+    echo -e "\n${BLUE}Git state after save commit push:${NC}"
     git status --short --branch
     echo
 fi
