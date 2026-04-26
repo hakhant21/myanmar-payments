@@ -203,7 +203,7 @@ describe('MyanmarPayments wrapper', function (): void {
         $gateway->shouldReceive('verifyCallback')->once()->with($callbackPayload)->andReturn(true);
 
         $factory = Mockery::mock(GatewayContract::class);
-        $factory->shouldReceive('make')->times(8)->with(Provider::KBZPAY)->andReturn($gateway);
+        $factory->shouldReceive('make')->times(9)->with(Provider::KBZPAY)->andReturn($gateway);
 
         $cache = Mockery::mock(CacheRepository::class);
         $cache->shouldReceive('add')->once()->andReturn(true);
@@ -218,6 +218,7 @@ describe('MyanmarPayments wrapper', function (): void {
             ->and($wrapper->createMmqr($mmqrRequest, Provider::KBZPAY))->toBe($mmqrResponse)
             ->and($wrapper->refund($refundRequest, Provider::KBZPAY))->toBe($refundResponse)
             ->and($wrapper->verifyCallback($callbackPayload, Provider::KBZPAY))->toBeTrue()
+            ->and($wrapper->callbackSuccessResponse(Provider::KBZPAY))->toBe('success')
             ->and($wrapper->supportsMmqr(Provider::KBZPAY))->toBeTrue()
             ->and($wrapper->supportsRefunds(Provider::KBZPAY))->toBeTrue()
             ->and($wrapper->supportsCallbackVerification(Provider::KBZPAY))->toBeTrue();

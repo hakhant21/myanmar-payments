@@ -162,4 +162,41 @@ describe('PaymentManager::provider()', function (): void {
 
         expect($manager->verifyCallback($payload))->toBeFalse();
     });
+
+    it('returns gateway-specific callback success response when available', function (): void {
+        $gateway = new class implements PaymentGateway {
+            public function createPayment(PaymentRequest $request): PaymentResponse
+            {
+                throw new RuntimeException('Not used.');
+            }
+
+            public function queryStatus(string $transactionId): PaymentResponse
+            {
+                throw new RuntimeException('Not used.');
+            }
+
+            public function callbackSuccessResponse(): string
+            {
+                return 'OK';
+            }
+        };
+
+        $factory = Mockery::mock(GatewayContract::class);
+        $factory->shouldReceive('make')->once()->with('kbzpay')->andReturn($gateway);
+
+        $manager = new PaymentManager($factory, 'kbzpay');
+
+        expect($manager->callbackSuccessResponse())->toBe('OK');
+    });
+
+    it('returns default callback success response when gateway does not define one', function (): void {
+        $gateway = Mockery::mock(PaymentGateway::class);
+
+        $factory = Mockery::mock(GatewayContract::class);
+        $factory->shouldReceive('make')->once()->with('kbzpay')->andReturn($gateway);
+
+        $manager = new PaymentManager($factory, 'kbzpay');
+
+        expect($manager->callbackSuccessResponse())->toBe('success');
+    });
 });

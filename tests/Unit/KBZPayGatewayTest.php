@@ -296,6 +296,31 @@ describe('KBZPayGateway::verifyCallback()', function (): void {
 
         expect($gateway->verifyCallback($payload))->toBeFalse();
     });
+
+    it('uses payload signature when callback sign field is not scalar', function (): void {
+        [$gateway, $config] = buildGateway();
+        $signature = new KBZPaySignature;
+
+        $fields = [
+            'appid' => 'TEST_APP_ID',
+            'merch_code' => 'TEST_MERCH',
+            'trade_status' => 'PAY_SUCCESS',
+            'merch_order_id' => 'ORD001',
+            'sign_type' => 'SHA256',
+        ];
+        $sign = $signature->sign($fields, $config['secret']);
+        $fields['sign'] = ['unexpected'];
+
+        $payload = new CallbackPayload(payload: ['Request' => $fields], signature: $sign);
+
+        expect($gateway->verifyCallback($payload))->toBeTrue();
+    });
+
+    it('returns success as the callback success response', function (): void {
+        [$gateway] = buildGateway();
+
+        expect($gateway->callbackSuccessResponse())->toBe('success');
+    });
 });
 
 describe('KBZPayGateway::createMmqr()', function (): void {

@@ -78,6 +78,34 @@ describe('HttpClient', function (): void {
         expect(fn (): array => $client->get('https://provider.test/get'))
             ->toThrow(ProviderUnavailableException::class, 'Provider request failed:');
     });
+
+    it('postWithOptions applies supported request options', function (): void {
+        Http::fake([
+            'https://provider.test/post-with-options' => Http::response(['ok' => true], 200),
+        ]);
+
+        $client = new HttpClient;
+
+        expect($client->postWithOptions(
+            'https://provider.test/post-with-options',
+            ['a' => 1],
+            ['X-Test' => 'yes'],
+            30,
+            ['withOptions' => ['verify' => false]],
+        ))->toBe(['ok' => true]);
+    });
+
+    it('postWithOptions wraps unsupported request options', function (): void {
+        $client = new HttpClient;
+
+        expect(fn (): array => $client->postWithOptions(
+            'https://provider.test/post-with-options',
+            ['a' => 1],
+            [],
+            30,
+            ['doesNotExist' => true],
+        ))->toThrow(ProviderUnavailableException::class, 'Unsupported HTTP client option: doesNotExist');
+    });
 });
 
 describe('CallbackIdempotencyGuard', function (): void {
