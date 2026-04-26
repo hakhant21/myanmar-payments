@@ -69,8 +69,10 @@ final readonly class HttpClient
     }
 
     /**
+     * @param  array<string, mixed>  $payload
      * @param  array<string, string>  $headers
      * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     public function postWithOptions(string $url, array $payload, array $headers = [], int $timeout = 30, array $options = []): array
     {
