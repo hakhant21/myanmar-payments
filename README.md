@@ -330,6 +330,7 @@ public function createMmqr(CreateMmqr $createMmqr): array
 Supported MMQR providers in this package are `KBZPay`, `AYA`, and `WaveMoney`.
 
 Notes by provider:
+
 - `KBZPay`: sends `kbz.payment.mmqrprecreate` using the same canonical signing helper as the rest of the KBZ gateway, with MMQR-specific `trade_type` and `notify_url` fields.
 - `AYA`: uses the QR payment endpoint and maps returned `qrdata` into `MmqrResponse::qrCode`.
 - `WaveMoney`: uses the same payment creation endpoint as normal checkout and returns the authenticate URL as `qr_code`.
