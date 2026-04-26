@@ -164,7 +164,8 @@ describe('PaymentManager::provider()', function (): void {
     });
 
     it('returns gateway-specific callback success response when available', function (): void {
-        $gateway = new class implements PaymentGateway {
+        $gateway = new class implements PaymentGateway
+        {
             public function createPayment(PaymentRequest $request): PaymentResponse
             {
                 throw new RuntimeException('Not used.');

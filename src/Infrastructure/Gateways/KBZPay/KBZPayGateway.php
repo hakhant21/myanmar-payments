@@ -168,7 +168,7 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     {
         $configured = $request->metadata['is_last_refund'] ?? $request->metadata['isLastRefund'] ?? false;
 
-        return $configured === true || $configured === 'Y' || $configured === 'y';
+        return in_array($configured, [true, 'Y', 'y'], true);
     }
 
     private function stringConfig(string $key, string $default = ''): string
