@@ -335,7 +335,7 @@ describe('TwoC2PGateway::refund()', function (): void {
             amount: 1000,
         ));
 
-        Http::assertSent(function (Request $request) use ($keyJwt, $keys): bool {
+        Http::assertSent(function (Request $request): bool {
             if ($request->url() !== 'https://sandbox.test/paymentToken') {
                 return false;
             }

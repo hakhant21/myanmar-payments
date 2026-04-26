@@ -24,6 +24,8 @@ use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\MyanmarPayments;
+use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 function makePaymentManagerWithGateway(PaymentGateway $gateway): PaymentManager
 {
@@ -156,7 +158,11 @@ describe('Application use cases', function (): void {
         $factory = Mockery::mock(GatewayContract::class);
         $factory->shouldReceive('make')->times(5)->with(Provider::KBZPAY)->andReturn($gateway);
 
-        $manager = new PaymentManager($factory, 'kbzpay');
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')->once()->andReturn(true);
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
 
         expect((new CreatePayment($manager))->handle($request, Provider::KBZPAY))->toBe($paymentResponse)
             ->and((new CreateMmqr($manager))->handle($mmqrRequest, Provider::KBZPAY))->toBe($mmqrResponse)
@@ -199,7 +205,11 @@ describe('MyanmarPayments wrapper', function (): void {
         $factory = Mockery::mock(GatewayContract::class);
         $factory->shouldReceive('make')->times(8)->with(Provider::KBZPAY)->andReturn($gateway);
 
-        $manager = new PaymentManager($factory, 'kbzpay');
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')->once()->andReturn(true);
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
 
         $wrapper = new MyanmarPayments($manager);
 
@@ -223,5 +233,25 @@ describe('MyanmarPayments wrapper', function (): void {
         $wrapper = new MyanmarPayments($manager);
 
         expect($wrapper->provider(Provider::KBZPAY))->toBe($gateway);
+    });
+
+    it('VerifyCallback use case applies shared callback protections', function (): void {
+        $payload = new CallbackPayload(['Request' => ['x' => 'y']], 'sig', time() - 301);
+
+        $gateway = Mockery::mock(PaymentGateway::class, CanVerifyCallback::class);
+        $gateway->shouldNotReceive('verifyCallback');
+        $gateway->shouldReceive('createPayment')->zeroOrMoreTimes();
+        $gateway->shouldReceive('queryStatus')->zeroOrMoreTimes();
+
+        $factory = Mockery::mock(GatewayContract::class);
+        $factory->shouldReceive('make')->once()->andReturn($gateway);
+
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldNotReceive('add');
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
+
+        expect((new VerifyCallback($manager))->handle($payload))->toBeFalse();
     });
 });

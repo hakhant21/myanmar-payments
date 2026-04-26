@@ -62,7 +62,7 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
             'appid' => $this->appId(),
             'merch_code' => $this->merchantCode(),
             'merch_order_id' => $request->transactionId,
-            'refund_request_no' => $request->reason !== '' ? $request->reason : $request->transactionId.'-refund',
+            'refund_request_no' => $this->refundRequestNo($request),
             'refund_reason' => $request->reason !== '' ? $request->reason : 'merchant_refund',
             'refund_amount' => (string) $request->amount,
             'sub_type' => $this->stringConfig('sub_type'),
@@ -134,6 +134,17 @@ final readonly class KBZPayGateway implements CanInitiateMmqr, CanRefundPayment,
     private function callbackInfo(PaymentRequest $request): string
     {
         return (string) ($request->metadata['callback_info'] ?? '');
+    }
+
+    private function refundRequestNo(RefundRequest $request): string
+    {
+        $configured = $request->metadata['refund_request_no'] ?? $request->metadata['refundRequestNo'] ?? null;
+
+        if (is_string($configured) && $configured !== '') {
+            return $configured;
+        }
+
+        return $request->transactionId.'-refund';
     }
 
     private function stringConfig(string $key, string $default = ''): string

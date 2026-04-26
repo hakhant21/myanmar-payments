@@ -200,9 +200,11 @@ describe('MmqrRequest', function (): void {
         );
 
         expect($request->toArray())->toBe([
+            'merchant_reference' => 'MMQR002',
             'merchantReference' => 'MMQR002',
             'amount' => 3000,
             'currency' => 'MMK',
+            'notify_url' => 'https://example.test/notify',
             'notifyUrl' => 'https://example.test/notify',
             'metadata' => ['timeout_express' => '60m'],
         ]);

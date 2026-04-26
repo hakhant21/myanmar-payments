@@ -18,6 +18,8 @@ use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Enums\PaymentStatus;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
 use Hakhant\Payments\Contracts\PaymentGateway;
+use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
+use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 afterEach(fn () => Mockery::close());
 
@@ -61,7 +63,7 @@ describe('PaymentManager::provider()', function (): void {
         $factory->shouldReceive('make')->with('kbzpay')->once()->andReturn($gateway);
 
         $manager = new PaymentManager($factory, 'kbzpay');
-        expect($manager->provider(null))->toBe($gateway);
+        expect($manager->provider())->toBe($gateway);
     });
 
     it('accepts Provider enum values', function (): void {
@@ -93,7 +95,11 @@ describe('PaymentManager::provider()', function (): void {
         $factory = Mockery::mock(GatewayContract::class);
         $factory->shouldReceive('make')->times(8)->with(Provider::KBZPAY)->andReturn($gateway);
 
-        $manager = new PaymentManager($factory, 'kbzpay');
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')->once()->andReturn(true);
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
 
         expect($manager->createPayment($paymentRequest, Provider::KBZPAY))->toBe($paymentResponse)
             ->and($manager->queryStatus('ORD100', Provider::KBZPAY))->toBe($paymentResponse)
@@ -121,5 +127,39 @@ describe('PaymentManager::provider()', function (): void {
             ->and($manager->supportsMmqr())->toBeFalse()
             ->and($manager->supportsRefunds())->toBeFalse()
             ->and($manager->supportsCallbackVerification())->toBeFalse();
+    });
+
+    it('rejects callbacks outside the configured timestamp tolerance', function (): void {
+        $gateway = Mockery::mock(PaymentGateway::class, CanVerifyCallback::class);
+        $gateway->shouldNotReceive('verifyCallback');
+
+        $factory = Mockery::mock(GatewayContract::class);
+        $factory->shouldReceive('make')->once()->with('kbzpay')->andReturn($gateway);
+
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldNotReceive('add');
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
+
+        expect($manager->verifyCallback(new CallbackPayload([], 'sig', time() - 301)))->toBeFalse();
+    });
+
+    it('rejects duplicate callbacks before gateway verification', function (): void {
+        $payload = new CallbackPayload(['Request' => ['x' => 'y']], 'sig', time());
+
+        $gateway = Mockery::mock(PaymentGateway::class, CanVerifyCallback::class);
+        $gateway->shouldNotReceive('verifyCallback');
+
+        $factory = Mockery::mock(GatewayContract::class);
+        $factory->shouldReceive('make')->once()->with('kbzpay')->andReturn($gateway);
+
+        $cache = Mockery::mock(CacheRepository::class);
+        $cache->shouldReceive('add')->once()->andReturn(false);
+        $guard = new CallbackIdempotencyGuard($cache);
+
+        $manager = new PaymentManager($factory, 'kbzpay', $guard, 300);
+
+        expect($manager->verifyCallback($payload))->toBeFalse();
     });
 });

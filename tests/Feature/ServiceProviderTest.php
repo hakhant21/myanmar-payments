@@ -18,6 +18,8 @@ use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyGateway;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyHash;
 use Hakhant\Payments\Infrastructure\Gateways\WaveMoney\WaveMoneyMapper;
 use Hakhant\Payments\Facades\MyanmarPayments;
+use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
+use Hakhant\Payments\Support\Logging\PaymentLogger;
 use Hakhant\Payments\Tests\Support\ProviderConfig;
 
 describe('ServiceProvider bindings', function (): void {
@@ -37,7 +39,9 @@ describe('ServiceProvider bindings', function (): void {
             ->and(app(TwoC2PJwt::class))->toBeInstanceOf(TwoC2PJwt::class)
             ->and(app(TwoC2PKeyJwt::class))->toBeInstanceOf(TwoC2PKeyJwt::class)
             ->and(app(WaveMoneyMapper::class))->toBeInstanceOf(WaveMoneyMapper::class)
-            ->and(app(WaveMoneyHash::class))->toBeInstanceOf(WaveMoneyHash::class);
+            ->and(app(WaveMoneyHash::class))->toBeInstanceOf(WaveMoneyHash::class)
+            ->and(app(PaymentLogger::class))->toBeInstanceOf(PaymentLogger::class)
+            ->and(app(CallbackIdempotencyGuard::class))->toBeInstanceOf(CallbackIdempotencyGuard::class);
     });
 
     it('aliases myanmar-payments to PaymentManager', function (): void {

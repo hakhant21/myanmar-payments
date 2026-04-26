@@ -50,8 +50,14 @@ final class MyanmarPaymentsServiceProvider extends ServiceProvider
 
         $this->app->singleton(PaymentManager::class, function (): PaymentManager {
             $defaultProvider = (string) config('myanmar-payments.default', 'kbzpay');
+            $callbackTolerance = (int) config('myanmar-payments.callback.timestamp_tolerance_seconds', 300);
 
-            return new PaymentManager(app(GatewayContract::class), $defaultProvider);
+            return new PaymentManager(
+                app(GatewayContract::class),
+                $defaultProvider,
+                app(CallbackIdempotencyGuard::class),
+                $callbackTolerance,
+            );
         });
 
         $this->app->singleton(PaymentLogger::class, static fn (): PaymentLogger => new PaymentLogger(app(LoggerInterface::class)));

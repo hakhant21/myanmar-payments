@@ -43,9 +43,11 @@ final readonly class MmqrRequest
     public function toArray(): array
     {
         return [
+            'merchant_reference' => $this->merchantReference,
             'merchantReference' => $this->merchantReference,
             'amount' => $this->amount,
             'currency' => $this->currency,
+            'notify_url' => $this->notifyUrl,
             'notifyUrl' => $this->notifyUrl,
             'metadata' => $this->metadata,
         ];

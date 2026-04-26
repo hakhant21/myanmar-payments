@@ -41,9 +41,11 @@ composer quality
 Notes:
 
 - `composer test` runs the Pest test suite.
+- `composer test:coverage` enables coverage explicitly with `XDEBUG_MODE=coverage`.
 - `composer analyse` runs PHPStan.
 - `composer format` runs Laravel Pint.
 - `composer refactor` runs Rector.
+- `composer test`, `composer analyse`, and `composer refactor` run with `XDEBUG_MODE=off` by default.
 - `composer quality` runs the full local sequence: tests, coverage, formatting, analysis, and refactor.
 
 ## Architecture Expectations

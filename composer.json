@@ -29,8 +29,8 @@
     "orchestra/testbench": "^8.0|^9.0|^10.0",
     "pestphp/pest": "^2.0|^3.0",
     "pestphp/pest-plugin-laravel": "^2.0|^3.0",
-    "phpstan/phpstan": "^1.11",
-    "rector/rector": "^1.2"
+    "phpstan/phpstan": "^2.1",
+    "rector/rector": "^2.4"
   },
   "autoload": {
     "psr-4": {
@@ -53,11 +53,11 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/pest",
+    "test": "XDEBUG_MODE=off vendor/bin/pest",
     "test:coverage": "XDEBUG_MODE=coverage vendor/bin/pest --coverage --coverage-text",
     "format": "vendor/bin/pint",
-    "analyse": "vendor/bin/phpstan analyse --memory-limit=1G --xdebug",
-    "refactor": "vendor/bin/rector process --xdebug",
+    "analyse": "XDEBUG_MODE=off vendor/bin/phpstan analyse --memory-limit=1G",
+    "refactor": "XDEBUG_MODE=off vendor/bin/rector process",
     "quality": [
       "@test",
       "@test:coverage",

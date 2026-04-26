@@ -18,12 +18,15 @@ use Hakhant\Payments\Domain\DTO\RefundRequest;
 use Hakhant\Payments\Domain\DTO\RefundResponse;
 use Hakhant\Payments\Domain\Enums\Provider;
 use Hakhant\Payments\Domain\Exceptions\ProviderException;
+use Hakhant\Payments\Support\Idempotency\CallbackIdempotencyGuard;
 
 final readonly class PaymentManager
 {
     public function __construct(
         private GatewayContract $gatewayFactory,
         private string $defaultProvider,
+        private ?CallbackIdempotencyGuard $callbackIdempotencyGuard = null,
+        private int $callbackTimestampToleranceSeconds = 300,
     ) {}
 
     public function provider(Provider|string|null $provider = null): PaymentGateway
@@ -71,6 +74,14 @@ final readonly class PaymentManager
             throw new ProviderException('Selected provider does not support callback verification.');
         }
 
+        if (! $this->isCallbackTimestampValid($payload)) {
+            return false;
+        }
+
+        if (! $this->lockCallback($payload, $provider)) {
+            return false;
+        }
+
         return $gateway->verifyCallback($payload);
     }
 
@@ -87,5 +98,39 @@ final readonly class PaymentManager
     public function supportsCallbackVerification(Provider|string|null $provider = null): bool
     {
         return $this->provider($provider) instanceof CanVerifyCallback;
+    }
+
+    private function isCallbackTimestampValid(CallbackPayload $payload): bool
+    {
+        if ($payload->timestamp === null) {
+            return true;
+        }
+
+        return abs(time() - $payload->timestamp) <= $this->callbackTimestampToleranceSeconds;
+    }
+
+    private function lockCallback(CallbackPayload $payload, Provider|string|null $provider): bool
+    {
+        if (! $this->callbackIdempotencyGuard instanceof CallbackIdempotencyGuard) {
+            return true;
+        }
+
+        return $this->callbackIdempotencyGuard->lock(
+            $this->callbackLockKey($payload, $provider),
+            max($this->callbackTimestampToleranceSeconds, 1),
+        );
+    }
+
+    private function callbackLockKey(CallbackPayload $payload, Provider|string|null $provider): string
+    {
+        $providerName = Provider::normalize($provider ?? $this->defaultProvider);
+        $encodedPayload = json_encode($payload->payload, JSON_UNESCAPED_SLASHES);
+
+        return hash('sha256', implode('|', [
+            $providerName,
+            $payload->signature,
+            (string) ($payload->timestamp ?? ''),
+            is_string($encodedPayload) ? $encodedPayload : '',
+        ]));
     }
 }

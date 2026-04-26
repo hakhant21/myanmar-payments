@@ -35,7 +35,7 @@ final readonly class AYAGateway implements CanInitiateMmqr, CanRefundPayment, Pa
             ?? '');
 
         $payload = [
-            'amount' => $this->usesPushPaymentV2($request) ? $request->amount : (string) $request->amount,
+            'amount' => $this->usesPushPayment($request) ? $request->amount : (string) $request->amount,
             'currency' => $request->currency,
             'customerPhone' => $this->customerPhone($request),
             'externalTransactionId' => $request->merchantReference,
@@ -46,11 +46,11 @@ final readonly class AYAGateway implements CanInitiateMmqr, CanRefundPayment, Pa
         }
 
         $message = (string) ($request->metadata['message'] ?? '');
-        if (! $this->usesPushPaymentV2($request) && $message !== '') {
+        if (! $this->usesPushPayment($request) && $message !== '') {
             $payload['message'] = $message;
         }
 
-        if ($this->usesPushPaymentV2($request)) {
+        if ($this->usesPushPayment($request)) {
             $payload['serviceCode'] = $this->serviceCode($request);
 
             $timeLimit = $request->metadata['time_limit'] ?? $this->config['time_limit'] ?? null;
@@ -60,7 +60,7 @@ final readonly class AYAGateway implements CanInitiateMmqr, CanRefundPayment, Pa
         }
 
         return $this->mapper->toPaymentResponse(
-            $this->client->requestPushPayment($payload, $this->usesPushPaymentV2($request)),
+            $this->client->requestPushPayment($payload, $this->usesPushPayment($request)),
             PaymentStatus::PENDING,
         );
     }
@@ -142,7 +142,7 @@ final readonly class AYAGateway implements CanInitiateMmqr, CanRefundPayment, Pa
         return $serviceCode;
     }
 
-    private function usesPushPaymentV2(PaymentRequest $request): bool
+    private function usesPushPayment(PaymentRequest $request): bool
     {
         return array_key_exists('service_code', $request->metadata)
             || array_key_exists('serviceCode', $request->metadata)

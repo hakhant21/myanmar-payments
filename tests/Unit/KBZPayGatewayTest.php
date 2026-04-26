@@ -156,6 +156,53 @@ describe('KBZPayGateway::refund()', function (): void {
             ->and($response->status)->toBe(PaymentStatus::REFUNDED)
             ->and($response->refundId)->toBe('REF001');
     });
+
+    it('uses metadata refund_request_no instead of human reason text', function (): void {
+        Http::fake([
+            'https://api.test/refund' => Http::response([
+                'Response' => ['refund_order_id' => 'REF002', 'refund_status' => 'REFUND_SUCCESS'],
+            ], 200),
+        ]);
+
+        [$gateway] = buildGateway();
+
+        $gateway->refund(new RefundRequest(
+            transactionId: 'ORD002',
+            amount: 500,
+            reason: 'Customer requested cancellation',
+            metadata: ['refund_request_no' => 'REFUND-REQ-002'],
+        ));
+
+        Http::assertSent(function (Request $request): bool {
+            $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
+
+            return ($biz['refund_request_no'] ?? null) === 'REFUND-REQ-002'
+                && ($biz['refund_reason'] ?? null) === 'Customer requested cancellation';
+        });
+    });
+
+    it('falls back to transaction based refund_request_no when metadata is absent', function (): void {
+        Http::fake([
+            'https://api.test/refund' => Http::response([
+                'Response' => ['refund_order_id' => 'REF003', 'refund_status' => 'REFUND_SUCCESS'],
+            ], 200),
+        ]);
+
+        [$gateway] = buildGateway();
+
+        $gateway->refund(new RefundRequest(
+            transactionId: 'ORD003',
+            amount: 500,
+            reason: 'Customer requested cancellation',
+        ));
+
+        Http::assertSent(function (Request $request): bool {
+            $biz = (($request->data())['Request'] ?? [])['biz_content'] ?? [];
+
+            return ($biz['refund_request_no'] ?? null) === 'ORD003-refund'
+                && ($biz['refund_reason'] ?? null) === 'Customer requested cancellation';
+        });
+    });
 });
 
 describe('KBZPayGateway::verifyCallback()', function (): void {

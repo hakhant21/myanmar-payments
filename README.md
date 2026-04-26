@@ -60,6 +60,7 @@ php artisan vendor:publish --tag=myanmar-payments-config
 
 ```dotenv
 MM_PAYMENT_PROVIDER=kbzpay
+MM_PAYMENT_CALLBACK_TOLERANCE=300
 
 TWOC2P_MERCHANT_ID=
 TWOC2P_SECRET_KEY=
@@ -229,6 +230,12 @@ For 2C2P, `transactionId` is the returned payment token because the transaction-
 
 ### Refund
 
+Provider-specific refund metadata:
+
+- `AYA`: pass `reference_number`
+- `KBZPay`: optionally pass `refund_request_no` or `refundRequestNo` to control the provider refund request identifier; otherwise the package uses `<transactionId>-refund`
+- `2C2P`: refund-specific optional fields are configured through package config such as `notify_url` and `idempotency_id`
+
 ```php
 use Hakhant\Payments\Application\PaymentManager;
 use Hakhant\Payments\Domain\DTO\RefundRequest;
@@ -241,9 +248,9 @@ public function refund(string $transactionId, PaymentManager $payments): array
         amount: 10000,
         reason: 'Customer requested cancellation',
         metadata: [
-            'reference_number' => 'provider-reference-if-required',
+            'refund_request_no' => 'REFUND-REQ-1001',
         ],
-    ), Provider::TWOC2P);
+    ), Provider::KBZPAY);
 
     return [
         'refund_id' => $response->refundId,
@@ -253,6 +260,13 @@ public function refund(string $transactionId, PaymentManager $payments): array
 ```
 
 ### Verify Callback Signature
+
+Prefer verifying callbacks through `PaymentManager`, the facade, or the `VerifyCallback` use case instead of calling a gateway's `verifyCallback()` method directly. The shared entrypoints apply package-level callback protections before provider-specific signature verification:
+
+- timestamp tolerance validation when `CallbackPayload::$timestamp` is provided
+- idempotency locking to reject duplicate callback deliveries within the configured tolerance window
+
+Configure the tolerance with `MM_PAYMENT_CALLBACK_TOLERANCE`.
 
 ```php
 use Hakhant\Payments\Application\PaymentManager;
@@ -265,6 +279,7 @@ public function webhook(Request $request, PaymentManager $payments)
     $payload = new CallbackPayload(
         payload: ['payload' => (string) $request->input('payload', '')],
         signature: '',
+        timestamp: $request->integer('timestamp'),
     );
 
     $valid = $payments->verifyCallback($payload, Provider::TWOC2P);
@@ -312,8 +327,9 @@ public function webhook(Request $request, PaymentManager $payments)
 - Whitelist only the callback fields your provider signs. Avoid using full request payloads.
 - Keep signature input format consistent with provider docs (raw body vs parsed fields).
 - Reject callbacks with missing signature headers.
-- Enforce replay protection using timestamp validation (for example, reject if older than 5 minutes).
-- Use idempotency keys (such as `prepay_id` or provider transaction ID) to prevent duplicate processing.
+- Use `PaymentManager::verifyCallback()`, `MyanmarPayments::verifyCallback()`, or the `VerifyCallback` use case so package-level timestamp and idempotency protections are applied consistently.
+- When the provider includes a callback timestamp, pass it into `CallbackPayload::$timestamp` so the package can reject stale callbacks using `MM_PAYMENT_CALLBACK_TOLERANCE`.
+- The package rejects duplicate callback deliveries within the configured tolerance window before provider-specific verification runs.
 - Return non-2xx for invalid signatures and do not mutate payment state.
 - Log minimal callback metadata and redact sensitive values.
 
@@ -386,6 +402,11 @@ composer analyse
 composer test
 composer refactor
 ```
+
+Notes:
+
+- `composer test`, `composer analyse`, and `composer refactor` run with `XDEBUG_MODE=off` by default for faster CLI runs and to avoid Herd/Xdebug restart noise.
+- Use `composer test:coverage` when you want coverage output.
 
 ## Documentation
 
