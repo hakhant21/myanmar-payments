@@ -4,7 +4,7 @@ Laravel Myanmar payment gateway package for KBZPay, WaveMoney (Wave Pay), 2C2P, 
 
 [![Tests](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/tests.yml)
 [![Static Analysis](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/analyse.yml)
-[![Release](https://github.com/hakhant21/myanmar-payments/actions/workflows/release.yml/badge.svg)](https://github.com/hakhant21/myanmar-payments/actions/workflows/release.yml)
+[![Version](https://img.shields.io/packagist/v/hakhant/myanmar-payments)](https://packagist.org/packages/hakhant/myanmar-payments)
 [![Downloads](https://img.shields.io/packagist/dt/hakhant/myanmar-payments)](https://packagist.org/packages/hakhant/myanmar-payments)
 [![License](https://img.shields.io/github/license/hakhant21/myanmar-payments.svg)](LICENSE.md)
 
