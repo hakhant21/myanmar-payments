@@ -18,7 +18,7 @@ Myanmar payment gateway support for Laravel:
 - AYA Pay
 - MMQR support for supported providers
 
-Common search terms: Myanmar payments, Myanmar payment gateway, KBZPay Laravel, Wave Pay Laravel, WaveMoney payment gateway, 2C2P Laravel, MMQR Laravel.
+Myanmar payments, Myanmar payment gateway, KBZPay Laravel, Wave Pay Laravel, WaveMoney payment gateway, 2C2P Laravel, MMQR Laravel.
 
 ## Features
 
@@ -130,12 +130,12 @@ KBZPAY_MMQR_URL=https://api.kbzpay.com/payment/gateway/mmqrprecreate
 
 ## Provider Capability Matrix
 
-| Provider | Create Payment | Query Status | Refund | Verify Callback | MMQR |
-| --- | --- | --- | --- | --- | --- |
-| KBZPay | Yes | Yes | Yes | Yes | Yes |
-| AYA Pay | Yes | Yes | Yes | No | Yes |
-| WaveMoney | Yes | No | No | Yes | Yes |
-| 2C2P | Yes | Yes | Yes | Yes | No |
+| Provider  | Create Payment | Query Status | Refund | Verify Callback | MMQR |
+| --------- | -------------- | ------------ | ------ | --------------- | ---- |
+| KBZPay    | Yes            | Yes          | Yes    | Yes             | Yes  |
+| AYA Pay   | Yes            | Yes          | Yes    | No              | Yes  |
+| WaveMoney | Yes            | No           | No     | Yes             | Yes  |
+| 2C2P      | Yes            | Yes          | Yes    | Yes             | No   |
 
 ### Provider Selection
 
