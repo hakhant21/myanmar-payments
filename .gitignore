@@ -2,4 +2,5 @@
 /.phpunit.result.cache
 /composer.lock
 initialize.md
+release.sh
 .vscode/
