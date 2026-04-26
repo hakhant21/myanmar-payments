@@ -28,32 +28,26 @@ jobs:
                   echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
                   echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
-                  # Calculate next patch version (bump 0.0.1)
-                  IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
-                  NEXT_PATCH=$((PATCH + 1))
-                  NEXT_VERSION="${MAJOR}.${MINOR}.${NEXT_PATCH}"
-                  echo "next_version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
-
             - name: Create GitHub Release
               uses: softprops/action-gh-release@v3
               with:
                   tag_name: ${{ steps.tag_version.outputs.tag }}
                   generate_release_notes: true
 
-            - name: Bump version for next development cycle
+            - name: Keep VERSION aligned with release tag
               run: |
-                  NEXT_VERSION="${{ steps.tag_version.outputs.next_version }}"
+                  RELEASE_VERSION="${{ steps.tag_version.outputs.version }}"
                   CURRENT=$(cat VERSION | tr -d '[:space:]')
 
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
 
-                  if [ "$CURRENT" = "$NEXT_VERSION" ]; then
-                      echo "VERSION is already ${NEXT_VERSION} — skipping bump commit."
+                  if [ "$CURRENT" = "$RELEASE_VERSION" ]; then
+                      echo "VERSION is already ${RELEASE_VERSION} — skipping sync commit."
                       exit 0
                   fi
 
-                  echo "${NEXT_VERSION}" > VERSION
+                  echo "${RELEASE_VERSION}" > VERSION
                   git add VERSION
-                  git commit -m "chore: bump version to ${NEXT_VERSION} for next release"
+                  git commit -m "chore: sync version to ${RELEASE_VERSION}"
                   git push origin HEAD:main

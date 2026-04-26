@@ -194,12 +194,12 @@ The repository uses a version-file-driven release flow.
 
 Current release inputs and automation:
 
-- The `VERSION` file stores the release version.
+- The `VERSION` file stores the current release version.
 - `composer release` runs `bash release.sh`.
-- `release.sh` requires a clean worktree and `main` branch.
-- The script rebases on `origin/main`, runs `composer test` and `composer analyse`, creates an empty release commit, and tags `v<version>`.
+- `release.sh` syncs with `origin/main`, uses the current `VERSION`, and requires the `main` branch.
+- The script syncs with `origin/main`, runs `composer test` and `composer analyse`, creates an empty release commit, and tags `v<version>`.
 - Pushing the tag triggers `.github/workflows/release.yml`.
-- The GitHub release workflow creates a GitHub Release and bumps `VERSION` to the next patch version on `main`.
+- The GitHub release workflow creates a GitHub Release and keeps `VERSION` aligned with the released tag on `main`.
 
 If you are preparing release-related changes, verify that `VERSION`, release notes context, and any user-facing docs are consistent before running `composer release`.
 
